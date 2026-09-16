@@ -695,6 +695,12 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .heat__cell, .heat-legend i { background:color-mix(in srgb, var(--ec-green) calc(var(--h) * var(--h) * 78%), var(--ec-fg-6)); }
 .heat__cell[style*="--h:0;"], .heat__cell[style="--h:0"] { color:var(--ec-fg-48); }
 
+/* v2.18: отдельная колонка технического имени в карте */
+.table.heat th:first-child, .table.heat td:first-child { width:24%; }
+.table.heat th:nth-child(2), .table.heat td:nth-child(2) { width:160px; }
+.table.heat th.num:nth-child(3), .table.heat td.num:nth-child(3) { width:64px; }
+.table.heat td.mono { font-size:11px; }
+
 </style>
 </head>
 <body>
@@ -1190,12 +1196,12 @@ function progressPage() {
         <span class="spacer"></span>
         <span class="muted">Сортировка</span><div class="seg seg--sm"><button class="${S.progressSort === 'group' ? 'is-active' : ''}" data-psort="group">По группам</button><button class="${S.progressSort === 'worst' ? 'is-active' : ''}" data-psort="worst">Сначала отстающие</button></div>
         <span class="header__sep"></span><span class="heat-legend"><i style="--h:0"></i><i style="--h:.25"></i><i style="--h:.5"></i><i style="--h:.75"></i><i style="--h:1"></i><span class="muted">0 → 100%</span></span></div>
-      <div class="panel__body"><table class="table heat"><thead><tr><th>Приложение</th><th class="num">Строк</th>${db.languages.map(l => `<th class="num ${l.code === S.lang ? 'is-cur' : ''}">${esc(l.tag)}</th>`).join('')}</tr></thead><tbody>
+      <div class="panel__body"><table class="table heat"><thead><tr><th>Приложение</th><th>Имя .lng</th><th class="num">Строк</th>${db.languages.map(l => `<th class="num ${l.code === S.lang ? 'is-cur' : ''}">${esc(l.tag)}</th>`).join('')}</tr></thead><tbody>
         ${(() => {
           const cell = (a, l) => { const st = getStats(rows.filter(r => r.app === a.id), l.code); const h = st.percent / 100; return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><button class="heat__cell ${st.percent === 100 ? 'is-done' : ''}" style="--h:${h}" data-progress-app="${esc(a.id)}" data-progress-lang="${esc(l.code)}" title="${esc(a.name)} · ${esc(l.name)}: переведено ${st.translated}, устарело ${st.outdated}, авто ${st.auto}, без перевода ${st.untranslated}"><b>${st.percent}%</b>${st.untranslated ? `<small>${st.untranslated}</small>` : ''}</button></td>`; };
-          const rowHtml = a => `<tr><td><span class="cell-app">${esc(a.name)}<small>${esc(a.id)}</small></span></td><td class="num muted">${fmt(getStats(rows.filter(r => r.app === a.id)).total)}</td>${db.languages.map(l => cell(a, l)).join('')}</tr>`;
+          const rowHtml = a => `<tr><td>${esc(a.name)}</td><td class="mono muted">${esc(a.id)}</td><td class="num muted">${fmt(getStats(rows.filter(r => r.app === a.id)).total)}</td>${db.languages.map(l => cell(a, l)).join('')}</tr>`;
           if (S.progressSort === 'worst') return [...db.apps].sort((x, y) => getStats(rows.filter(r => r.app === x.id)).percent - getStats(rows.filter(r => r.app === y.id)).percent).map(rowHtml).join('');
-          return GROUPS.map(g => { const apps = db.apps.filter(x => x.group === g); if (!apps.length) return ''; const open = !S.progressClosed.has(g); const grows = rows.filter(r => apps.some(x => x.id === r.app)); return `<tr class="heat__group ${open ? 'is-open' : ''}" data-pgroup="${esc(g)}"><td><span class="heat__gname">${icon('right')}<b>${esc(g)}</b><span class="muted">${apps.length} ${plural(apps.length, 'приложение', 'приложения', 'приложений')}</span></span></td><td class="num muted">${fmt(getStats(grows).total)}</td>${db.languages.map(l => { const st = getStats(grows, l.code); return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><span class="heat__cell heat__cell--sum" style="--h:${st.percent / 100}" title="${esc(g)} · ${esc(l.name)}: без перевода ${st.untranslated}"><b>${st.percent}%</b>${st.untranslated ? `<small>${st.untranslated}</small>` : ''}</span></td>`; }).join('')}</tr>` + (open ? apps.map(rowHtml).join('') : ''); }).join('');
+          return GROUPS.map(g => { const apps = db.apps.filter(x => x.group === g); if (!apps.length) return ''; const open = !S.progressClosed.has(g); const grows = rows.filter(r => apps.some(x => x.id === r.app)); return `<tr class="heat__group ${open ? 'is-open' : ''}" data-pgroup="${esc(g)}"><td><span class="heat__gname">${icon('right')}<b>${esc(g)}</b><span class="muted">${apps.length} ${plural(apps.length, 'приложение', 'приложения', 'приложений')}</span></span></td><td></td><td class="num muted">${fmt(getStats(grows).total)}</td>${db.languages.map(l => { const st = getStats(grows, l.code); return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><span class="heat__cell heat__cell--sum" style="--h:${st.percent / 100}" title="${esc(g)} · ${esc(l.name)}: без перевода ${st.untranslated}"><b>${st.percent}%</b>${st.untranslated ? `<small>${st.untranslated}</small>` : ''}</span></td>`; }).join('')}</tr>` + (open ? apps.map(rowHtml).join('') : ''); }).join('');
         })()}
       </tbody></table></div>
       <div class="panel__foot"><span class="muted">В ячейке: процент Translated и мелко — сколько строк без перевода. Ignored исключены. Клик открывает строки приложения на этом языке.</span></div></section>
