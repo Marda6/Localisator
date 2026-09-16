@@ -58,7 +58,7 @@ const db = {
   ignored: stored.ignored || {},
   excludedModules: stored.excludedModules || ['GR32_portable'],
   theme: stored.theme || 'dark',
-  layout: stored.layout || {tree: 232, insp: 380}
+  layout: Object.assign({tree: 232, insp: 380, hName: 260, hId: 160, hRows: 64}, stored.layout || {})
 };
 let rows = makeRows(db.apps);
 const drafts = {}; // черновики живут только в сессии — сохраняется лишь применённый перевод
@@ -308,10 +308,10 @@ function progressPage() {
         <span class="spacer"></span>
         <span class="muted">Сортировка</span><div class="seg seg--sm"><button class="${S.progressSort === 'group' ? 'is-active' : ''}" data-psort="group">По группам</button><button class="${S.progressSort === 'worst' ? 'is-active' : ''}" data-psort="worst">Сначала отстающие</button></div>
         <span class="header__sep"></span><span class="heat-legend"><i style="--h:0"></i><i style="--h:.25"></i><i style="--h:.5"></i><i style="--h:.75"></i><i style="--h:1"></i><span class="muted">0 → 100%</span></span></div>
-      <div class="panel__body"><table class="table heat"><thead><tr><th>Приложение</th><th>Имя .lng</th><th class="num">Строк</th>${db.languages.map(l => `<th class="num ${l.code === S.lang ? 'is-cur' : ''}">${esc(l.tag)}</th>`).join('')}</tr></thead><tbody>
+      <div class="panel__body"><table class="table heat" style="--h-name:${db.layout.hName}px;--h-id:${db.layout.hId}px;--h-rows:${db.layout.hRows}px"><thead><tr><th>Приложение<span class="colgrip" data-col="hName" title="Потянуть, чтобы изменить ширину"></span></th><th>Имя .lng<span class="colgrip" data-col="hId"></span></th><th class="num">Строк<span class="colgrip" data-col="hRows"></span></th>${db.languages.map(l => `<th class="num ${l.code === S.lang ? 'is-cur' : ''}">${esc(l.tag)}</th>`).join('')}</tr></thead><tbody>
         ${(() => {
           const cell = (a, l) => { const st = getStats(rows.filter(r => r.app === a.id), l.code); const h = st.percent / 100; return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><button class="heat__cell ${st.percent === 100 ? 'is-done' : ''}" style="--h:${h}" data-progress-app="${esc(a.id)}" data-progress-lang="${esc(l.code)}" title="${esc(a.name)} · ${esc(l.name)}: переведено ${st.translated}, устарело ${st.outdated}, авто ${st.auto}, без перевода ${st.untranslated}"><b>${st.percent}%</b>${st.untranslated ? `<small>${st.untranslated}</small>` : ''}</button></td>`; };
-          const rowHtml = a => `<tr><td>${esc(a.name)}</td><td class="mono muted">${esc(a.id)}</td><td class="num muted">${fmt(getStats(rows.filter(r => r.app === a.id)).total)}</td>${db.languages.map(l => cell(a, l)).join('')}</tr>`;
+          const rowHtml = a => `<tr><td class="heat__app">${esc(a.name)}</td><td class="mono muted">${esc(a.id)}</td><td class="num muted">${fmt(getStats(rows.filter(r => r.app === a.id)).total)}</td>${db.languages.map(l => cell(a, l)).join('')}</tr>`;
           if (S.progressSort === 'worst') return [...db.apps].sort((x, y) => getStats(rows.filter(r => r.app === x.id)).percent - getStats(rows.filter(r => r.app === y.id)).percent).map(rowHtml).join('');
           return GROUPS.map(g => { const apps = db.apps.filter(x => x.group === g); if (!apps.length) return ''; const open = !S.progressClosed.has(g); const grows = rows.filter(r => apps.some(x => x.id === r.app)); return `<tr class="heat__group ${open ? 'is-open' : ''}" data-pgroup="${esc(g)}"><td><span class="heat__gname">${icon('right')}<b>${esc(g)}</b><span class="muted">${apps.length} ${plural(apps.length, 'приложение', 'приложения', 'приложений')}</span></span></td><td></td><td class="num muted">${fmt(getStats(grows).total)}</td>${db.languages.map(l => { const st = getStats(grows, l.code); return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><span class="heat__cell heat__cell--sum" style="--h:${st.percent / 100}" title="${esc(g)} · ${esc(l.name)}: без перевода ${st.untranslated}"><b>${st.percent}%</b>${st.untranslated ? `<small>${st.untranslated}</small>` : ''}</span></td>`; }).join('')}</tr>` + (open ? apps.map(rowHtml).join('') : ''); }).join('');
         })()}
@@ -675,6 +675,16 @@ document.addEventListener('pointerdown', e => {
   const move = ev => { const d = ev.clientX - startX; db.layout[which] = Math.round(Math.min(max, Math.max(min, which === 'tree' ? start + d : start - d))); ws.style.setProperty(`--${which}-w`, db.layout[which] + 'px'); };
   const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); g.classList.remove('is-active'); document.body.style.cursor = ''; document.body.style.userSelect = ''; persist(); };
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); e.preventDefault();
+});
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.colgrip'); if (!g) return;
+  const table = g.closest('table'), which = g.dataset.col, startX = e.clientX, start = db.layout[which];
+  const min = which === 'hRows' ? 48 : 96, max = which === 'hRows' ? 160 : 480;
+  const varName = {hName: '--h-name', hId: '--h-id', hRows: '--h-rows'}[which];
+  g.classList.add('is-active'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+  const move = ev => { db.layout[which] = Math.round(Math.min(max, Math.max(min, start + ev.clientX - startX))); table.style.setProperty(varName, db.layout[which] + 'px'); };
+  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); g.classList.remove('is-active'); document.body.style.cursor = ''; document.body.style.userSelect = ''; persist(); };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); e.preventDefault(); e.stopPropagation();
 });
 document.addEventListener('dblclick', e => { const g = e.target.closest('.gutter'); if (!g) return; db.layout[g.dataset.gutter] = g.dataset.gutter === 'tree' ? 232 : 380; persist(); render(); });
 $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
