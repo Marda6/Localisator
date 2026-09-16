@@ -436,3 +436,14 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .hist__meta b { font-weight:500; }
 .hist__text { color:var(--ec-fg-64); }
 .suggest { margin-top:2px; }
+
+/* ============================================= v2.3: больше места тексту === */
+.srcbox--lg { font-size:14px; line-height:20px; padding:10px 12px; min-height:60px; }
+.editor textarea { min-height:132px; font-size:14px; line-height:20px; padding:10px 12px; }
+.sect--tabs { gap:8px; }
+.tabpane { display:flex; flex-direction:column; gap:0; }
+.tabpane .irow { min-height:28px; }
+.tabpane .match { height:28px; }
+.tabpane p.muted { padding:4px 0; }
+.win--mini { margin-top:4px; }
+.win--mini .win__body { padding:6px 8px; }
