@@ -68,7 +68,7 @@ const PAGES = ['translations', 'progress', 'admin', 'guide'];
 const S = {
   page: 'translations', app: 'CAM', lang: 'ru', version: '18.0',
   status: 'all', module: 'all', query: '', mine: false, showIgnored: false,
-  selected: 'CAM.Toolpath.Calculate', tab: 'context', matchSel: new Set(), matchSelFor: null,
+  selected: 'CAM.Toolpath.Calculate', tab: 'context', winOpen: false, matchSel: new Set(), matchSelFor: null,
   role: 'admin', dealer: 'dealer-a',
   openGroups: new Set(['ENCY']), editorOpen: false
 };
@@ -221,7 +221,7 @@ function inspector() {
   const moduleLocked = db.excludedModules.includes(row.module);
   return `<aside class="panel panel--insp">
     <div class="panel__head"><span class="panel__title">Перевод</span>${ig ? statusBadge('ignored', 'Ignored') : statusBadge(t.status)}<span class="spacer"></span>
-      <button class="ibtn" data-act="previous" title="Предыдущая (K)">${icon('up')}</button><button class="ibtn" data-act="next" title="Следующая (J)">${icon('down')}</button>
+      ${isAdmin() ? `<button class="ibtn ${ig ? 'is-pressed' : ''}" data-act="ignore" ${moduleLocked ? 'disabled' : ''} title="${moduleLocked ? 'Модуль исключён из перевода' : ig ? 'Ignored: вернуть в перевод' : 'Отметить как Ignored — не переводить'}">${icon(ig ? 'eyeOff' : 'eye')}</button>` : ''}<button class="ibtn" data-act="previous" title="Предыдущая (K)">${icon('up')}</button><button class="ibtn" data-act="next" title="Следующая (J)">${icon('down')}</button>
       <button class="ibtn" data-act="close-editor" title="Закрыть">${icon('close')}</button></div>
     <div class="insp"><div class="insp__scroll">
       <div class="sect"><div class="sect__head"><span class="lang">EN</span><b>${esc(app?.name || row.app)}</b><span class="muted ellipsis">${esc(row.context)}</span><button class="ibtn" data-act="copy-source" title="Скопировать эталон">${icon('copy')}</button></div>
@@ -270,11 +270,15 @@ function inspectorTab(row, t, matches, pending, ig, moduleLocked) {
         <button class="mcard__body" data-goto="${esc(r.id)}" title="Открыть строку"><span class="mcard__text ${mt.text ? '' : 'is-empty'}">${mt.text ? esc(mt.text) : 'нет перевода'}</span><span class="mcard__where"><span>${esc(appById(r.app)?.name || r.app)}</span><i></i><span>${esc(MODULES[r.module]?.label || r.module)}</span></span></button>
         ${statusBadge(mt.status)}</div>`; }).join('')}`;
   }
-  return `<div class="irow"><span class="irow__label">Ключ</span><span class="irow__val"><code class="ellipsis">${esc(row.id)}</code><button class="ibtn" data-act="copy-key" title="Скопировать ключ">${icon('copy')}</button></span></div>
-    <div class="irow"><span class="irow__label">Модуль</span><span class="irow__val"><span class="ellipsis">${esc(MODULES[row.module]?.label || row.module)}</span></span></div>
-    <div class="irow"><span class="irow__label">Ответственный</span><span class="irow__val">${avatar(row.owner)}<span class="ellipsis">${esc(row.owner)}</span>${row.owner === ME ? '<span class="tag tag--green">вы</span>' : ''}</span></div>
-    <div class="irow"><span class="irow__label">Ignored</span><span class="irow__val"><label class="tgl"><input type="checkbox" id="ignore-toggle" ${ig ? 'checked' : ''} ${!isAdmin() || moduleLocked ? 'disabled' : ''}><span class="tgl__track"></span><span>${moduleLocked ? 'модуль исключён' : ig ? 'не переводить' : 'переводить'}</span></label></span></div>
-    <div class="irow irow--top"><span class="irow__label">Где в окне</span><span class="irow__val"><button class="win win--mini" data-act="context" title="Открыть схему окна">${windowScheme(row).slice('<div class="win">'.length, -'</div>'.length)}</button></span></div>`;
+  return `<div class="ctx">
+    <div class="ctx__group">
+      <div class="irow"><span class="irow__label">Ключ</span><span class="irow__val"><code class="ellipsis" title="${esc(row.id)}">${esc(row.id)}</code><button class="ibtn" data-act="copy-key" title="Скопировать ключ">${icon('copy')}</button></span></div>
+      <div class="irow"><span class="irow__label">Модуль</span><span class="irow__val"><span class="ellipsis">${esc(MODULES[row.module]?.label || row.module)}</span><span class="muted">${esc(row.module)}</span></span></div>
+      <div class="irow"><span class="irow__label">Ответственный</span><span class="irow__val">${avatar(row.owner)}<span class="ellipsis">${esc(row.owner)}</span>${row.owner === ME ? '<span class="tag tag--green">вы</span>' : ''}</span></div>
+    </div>
+    <details class="acc acc--ctx" ${S.winOpen ? 'open' : ''} id="win-acc"><summary class="acc__head">${icon('right')}<b>Где в окне</b><span class="muted">${esc(row.context)}</span></summary>
+      <div class="acc__body">${windowScheme(row)}<p class="muted">В производственной версии здесь снимок окна ENCY с подсветкой элемента.</p></div></details>
+  </div>`;
 }
 
 function translationsPage() {
@@ -565,6 +569,7 @@ document.addEventListener('input', e => {
   if (e.target.id === 'translation-input') updateDraft(e.target.value);
   if (e.target.id === 'string-search') { S.query = e.target.value; render(); }
 });
+document.addEventListener('toggle', e => { if (e.target.id === 'win-acc') S.winOpen = e.target.open; }, true);
 document.addEventListener('change', e => {
   const el = e.target;
   if (el.id === 'language-select') { S.lang = el.value; render(); }
@@ -573,7 +578,6 @@ document.addEventListener('change', e => {
   if (el.name === 'match-id') { el.checked ? S.matchSel.add(el.value) : S.matchSel.delete(el.value); render(); }
   if (el.id === 'match-all') { const row = editorRow(); S.matchSel = el.checked ? new Set(rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row)).map(r => r.id)) : new Set(); render(); }
   if (el.id === 'ignored-toggle') { S.showIgnored = el.checked; render(); }
-  if (el.id === 'ignore-toggle') { action('ignore'); }
   if (el.dataset.access) {
     if (!adminOnly()) { el.checked = !el.checked; return; }
     const dealer = db.dealers.find(x => x.id === el.dataset.access);

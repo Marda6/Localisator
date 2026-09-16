@@ -519,3 +519,17 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .tl__restore .icon { width:12px; height:12px; }
 .empty-state--sm { padding:20px 8px; gap:4px; }
 .empty-state--sm .icon { width:16px; height:16px; }
+
+/* ============================================= v2.8: вкладка Контекст === */
+.ctx { display:flex; flex-direction:column; gap:8px; }
+.ctx__group { display:flex; flex-direction:column; }
+.ctx__group .irow { min-height:28px; border-bottom:1px solid var(--divider); border-radius:0; margin:0; padding:0; }
+.ctx__group .irow:last-child { border-bottom:none; }
+.ctx__group .irow:hover { background:transparent; }
+.ctx__group .irow__label { width:112px; }
+.ctx__group code { font-size:11px; }
+.acc--ctx { border:none; padding:0; }
+.acc--ctx .acc__head { margin:0; height:28px; padding:0 4px; }
+.acc--ctx .acc__body { padding:4px 0 0; gap:6px; }
+.acc--ctx .win { cursor:default; }
+.panel__head .ibtn.is-pressed { color:var(--ec-amber); background:var(--ec-fg-8); }
