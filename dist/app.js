@@ -186,22 +186,23 @@ function stringsPanel() {
   return `<section class="panel panel--strings">
     <div class="panel__head"><span class="panel__title">${esc(app ? app.name : 'Все приложения')}${app ? `<span class="panel__count">${esc(app.id)}</span>` : ''}</span>
       <span class="pct" title="Доля Translated среди строк без Ignored">${st.percent}%</span><span class="spacer"></span>
-      <button class="btn" data-act="autotranslate" ${!canEdit() || !st.untranslated ? 'disabled' : ''} title="Предложить автоперевод для ${st.untranslated} строк без перевода">${icon('sparkles')}<span>Автоперевод</span></button>
-      <button class="btn" data-act="export" title="Скачать .lng для ${esc(app ? app.name : 'всех приложений')} · ${esc(currentLanguage().name)}">${icon('download')}<span>.lng</span></button></div>
+      <label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Поиск по тексту или ключу" autocomplete="off"><kbd>/</kbd></label></div>
     <div class="toolbar">
-      <div class="toolbar__row"><label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Поиск по тексту или ключу" autocomplete="off"><kbd>/</kbd></label><span class="spacer"></span>
-      ${dd('module-select', '', [opt('all', 'Все модули', S.module === 'all'), ...Object.entries(MODULES).map(([id, m]) => opt(id, m.label, S.module === id))].join(''))}
-      <button class="fchip ${S.mine ? 'is-active' : ''}" data-act="toggle-mine" title="Только строки, за которые отвечаю я">${icon('user')}Мои</button>
-      ${filtered ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}</div>
       <div class="toolbar__row toolbar__row--chips">${chips.map(([id, label, n, dot]) => `<button class="fchip ${S.status === id ? 'is-active' : ''}" data-status="${id}">${dot ? `<span class="fchip__dot" style="--dot:var(${dot})"></span>` : ''}<span class="fchip__label">${label}</span><span class="fchip__n">${n}</span></button>`).join('')}</div>
+      <span class="spacer"></span>
+      ${dd('module-select', '', [opt('all', 'Все модули', S.module === 'all'), ...Object.entries(MODULES).map(([id, m]) => opt(id, m.label, S.module === id))].join(''))}
+      <button class="fchip ${S.mine ? 'is-active' : ''}" data-act="toggle-mine" title="Только строки, за которые отвечаю я">${icon('user')}<span class="fchip__label">Мои</span></button>
+      ${filtered ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}
     </div>
     <div class="panel__body" id="strings-list">
       <div class="grid-head"><span>English</span><span class="col-tr">${esc(currentLanguage().name)}</span><span>Статус</span></div>
       ${list.length ? list.map(r => stringRow(r)).join('') : `<div class="empty-state">${icon('search')}<b>Строки не найдены</b><span>Измените запрос или фильтры</span></div>`}
     </div>
-    <div class="panel__foot"><span>${fmt(list.length)} ${plural(list.length, 'строка', 'строки', 'строк')}</span>
+    <div class="panel__foot panel__foot--actions"><span>${fmt(list.length)} ${plural(list.length, 'строка', 'строки', 'строк')}</span>
       ${st.ignored ? `<label class="tgl"><input type="checkbox" id="ignored-toggle" ${S.showIgnored ? 'checked' : ''}><span class="tgl__track"></span><span>Ignored · ${st.ignored}</span></label>` : ''}
-      <span class="spacer"></span><span class="muted"><kbd>J</kbd>/<kbd>K</kbd> строки · <kbd>Ctrl ↵</kbd> применить</span></div>
+      <span class="spacer"></span>
+      <button class="btn" data-act="autotranslate" ${!canEdit() || !st.untranslated ? 'disabled' : ''} title="Предложить автоперевод для строк без перевода">${icon('sparkles')}<span>Автоперевод</span>${st.untranslated ? `<span class="fchip__n">${st.untranslated}</span>` : ''}</button>
+      <button class="btn" data-act="export" title="Скачать .lng: ${esc(app ? app.name : 'все приложения')} · ${esc(currentLanguage().name)}">${icon('download')}<span>Скачать .lng</span></button></div>
   </section>`;
 }
 

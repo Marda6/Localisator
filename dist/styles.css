@@ -585,3 +585,27 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .arow:not(.is-selected):not(:hover) .arow__meta .todo { color:var(--ec-fg-48); opacity:1; }
 .arow:not(.is-selected):not(:hover) .arow__meta .is-done { color:var(--ec-fg-56); }
 .arow .bar i, .arow__meta .todo { transition:background .16s, color .16s; }
+
+/* ============================================= v2.13: панель строк — шапка / фильтры / действия === */
+.panel--strings .panel__head .field--search { width:280px; max-width:40%; flex:0 1 280px; }
+.panel--strings .toolbar { flex-direction:row; align-items:center; gap:6px; height:36px; padding:0 8px; }
+.panel--strings .toolbar__row--chips { flex:0 1 auto; min-width:0; }
+.panel--strings .toolbar .dd, .panel--strings .toolbar .fchip[data-act="toggle-mine"] { flex-shrink:0; }
+.panel__foot--actions { height:36px; gap:8px; }
+.panel__foot--actions .btn .fchip__n { margin-left:2px; }
+@container (max-width: 640px) {
+  .panel--strings .toolbar__row--chips .fchip:not([data-status="all"]) .fchip__label { display:none; }
+  .panel--strings .toolbar__row--chips .fchip:not([data-status="all"]) { padding:0 6px; }
+  .panel--strings .toolbar .fchip[data-act="toggle-mine"] .fchip__label { display:none; }
+}
+
+/* v2.13.1: чипы не обрезаются — либо полная подпись, либо точка + число */
+.panel--strings .toolbar__row--chips .fchip { flex:0 0 auto; }
+.panel--strings .toolbar__row--chips .fchip__label { overflow:visible; text-overflow:clip; }
+@container (max-width: 860px) {
+  .panel--strings .toolbar__row--chips .fchip:not([data-status="all"]) .fchip__label { display:none; }
+  .panel--strings .toolbar__row--chips .fchip:not([data-status="all"]) { padding:0 6px; }
+}
+@container (max-width: 560px) {
+  .panel--strings .toolbar .fchip[data-act="toggle-mine"] .fchip__label { display:none; }
+}
