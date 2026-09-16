@@ -389,6 +389,39 @@ dialog::backdrop { background:var(--ec-bg-80); }
   .brand__name small, .header__sep { display:none; }
 }
 
+/* ============================================= v2.1: фокус на переводе === */
+.grid-head, .srow { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 120px; }
+.srcbox--lg { font-size:13px; line-height:18px; padding:8px 10px; }
+.pct.is-done { color:var(--ec-green); }
+.trow { padding-left:16px; }
+.tree__group { padding-left:2px; }
+/* предложение автоперевода под полем */
+.suggest { display:flex; align-items:center; gap:8px; width:100%; min-height:28px; padding:4px 8px; text-align:left;
+  border-radius:var(--ec-radius); border:1px dashed var(--ec-fg-16); background:var(--ec-fg-4); color:var(--ec-fg-72); transition:background .12s,border-color .12s; }
+.suggest:hover { background:var(--ec-fg-8); border-color:var(--st-auto); color:var(--ec-fg-96); }
+.suggest .icon { color:var(--st-auto); }
+.suggest__text { flex:1; min-width:0; white-space:pre-wrap; word-break:break-word; }
+.suggest__cta { flex-shrink:0; color:var(--st-auto); font-weight:600; }
+/* аккордеон «Подробности» */
+.acc { border-top:1px solid var(--divider); padding-top:4px; }
+.acc__head { display:flex; align-items:center; gap:6px; height:24px; list-style:none; cursor:pointer; color:var(--ec-fg-64); border-radius:var(--ec-radius); padding:0 4px; margin:0 -4px; }
+.acc__head::-webkit-details-marker { display:none; }
+.acc__head:hover { background:var(--ec-fg-4); color:var(--ec-fg-96); }
+.acc__head b { font-weight:600; color:var(--ec-fg-80); }
+.acc__head .icon { color:var(--ec-fg-48); transition:transform .12s; }
+.acc[open] .acc__head .icon { transform:rotate(90deg); }
+.acc[open] .acc__head .muted { display:none; }
+.acc__body { display:flex; flex-direction:column; gap:2px; padding-top:4px; }
+.irow--top { align-items:flex-start; }
+.irow--top .irow__label { padding-top:4px; }
+.irow--top .irow__val { display:block; }
+.irow .hist__e { grid-template-columns:1fr; padding:2px 0; }
+.insp__foot .row .btn--secondary { flex:0 0 auto; }
+.panel__head .status { margin-left:2px; }
+.panel__foot .tgl { color:var(--ec-fg-48); }
+@media (max-width:1280px) { .grid-head, .srow { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 112px; } }
+@media (max-width:760px) { .grid-head, .srow { grid-template-columns:minmax(0,1fr) 100px; } }
+
 </style>
 </head>
 <body>
@@ -630,7 +663,7 @@ const PAGES = ['translations', 'progress', 'admin', 'guide'];
 const S = {
   page: 'translations', app: 'CAM', lang: 'ru', version: '18.0',
   status: 'all', module: 'all', query: '', mine: false, showIgnored: false,
-  selected: 'CAM.Toolpath.Calculate', tab: 'context',
+  selected: 'CAM.Toolpath.Calculate', detailsOpen: false,
   role: 'admin', dealer: 'dealer-a',
   openGroups: new Set(['ENCY']), editorOpen: false
 };
@@ -692,18 +725,18 @@ function toast(message, type = 'success') {
 
 /* ---------------------------------------------------------------- header */
 function header() {
-  const nav = [['translations', 'translate', 'Переводы'], ['progress', 'chart', 'Прогресс'], ['admin', 'shield', 'Администрирование'], ['guide', 'book', 'Руководство']];
-  const langs = db.languages.map(l => opt(l.code, `${l.name} (${l.native})`, S.lang === l.code)).join('');
+  const nav = [['translations', 'translate', 'Переводы'], ['progress', 'chart', 'Прогресс'], ['admin', 'shield', 'Администрирование']];
+  const langs = db.languages.map(l => opt(l.code, l.name, S.lang === l.code)).join('');
   return `<header class="header">
     <a class="brand" href="#translations"><span class="brand__mark">${icon('translate')}</span><span class="brand__name">ENCY<small>Localizer</small></span></a>
     <nav class="tabs" aria-label="Разделы">${nav.map(([id, i, label]) => `<button class="tabs__seg ${S.page === id ? 'is-active' : ''}" data-page="${id}">${icon(i)}<span>${label}</span></button>`).join('')}</nav>
-    <span class="header__sep"></span>
-    ${dd('version-select', 'Версия', ['17.0', '18.0'].map(v => opt(v, 'ENCY ' + v, S.version === v)).join(''))}
-    ${dd('language-select', 'Язык', langs)}
     <span class="spacer"></span>
-    <button class="btn btn--ghost" data-act="profile" title="Роль в прототипе">${avatar(ME)}<span>${isAdmin() ? 'Администратор' : 'Переводчик · ' + esc(db.dealers.find(d => d.id === S.dealer)?.name || '')}</span>${icon('down')}</button>
+    ${dd('version-select', 'Версия', ['17.0', '18.0'].map(v => opt(v, v, S.version === v)).join(''))}
+    ${dd('language-select', 'Язык', langs)}
+    <span class="header__sep"></span>
+    <button class="ibtn ibtn--24 ${S.page === 'guide' ? 'is-pressed' : ''}" data-page="guide" title="Руководство">${icon('book')}</button>
     <button class="ibtn ibtn--24" data-act="theme" title="Светлая / тёмная тема">${icon(db.theme === 'dark' ? 'sun' : 'moon')}</button>
-    <button class="btn btn--primary" data-act="export">${icon('download')}<span>Скачать .lng</span></button>
+    <button class="ibtn ibtn--24" data-act="profile" title="${isAdmin() ? 'Администратор' : 'Переводчик · ' + esc(db.dealers.find(d => d.id === S.dealer)?.name || '')} — сменить роль">${avatar(ME)}</button>
   </header>`;
 }
 
@@ -711,19 +744,18 @@ function header() {
 const GROUPS = ['ENCY', 'Инструменты', 'Сервисы', 'Tuner', 'Другие'];
 
 function appsTree() {
-  const all = getStats(rows.filter(r => !S.mine || r.owner === ME));
-  return `<aside class="panel panel--tree"><div class="panel__head"><span class="panel__title">Приложения<span class="panel__count">${db.apps.length}</span></span><span class="spacer"></span>
-    <label class="tgl" title="Только строки, за которые отвечаю я"><input type="checkbox" id="mine-toggle" ${S.mine ? 'checked' : ''}><span class="tgl__track"></span><span>Мои</span></label></div>
+  const all = getStats(rows);
+  return `<aside class="panel panel--tree"><div class="panel__head"><span class="panel__title">Приложения</span></div>
     <div class="panel__body tree">
-      <button class="trow trow--all ${S.app === 'all' ? 'is-selected' : ''}" data-app="all">${icon('layers')}<span class="trow__name">Все приложения</span><span class="pct">${all.percent}%</span></button>
+      <button class="trow trow--all ${S.app === 'all' ? 'is-selected' : ''}" data-app="all"><span class="trow__name">Все приложения</span><span class="pct">${all.percent}%</span></button>
       ${GROUPS.map(g => {
         const apps = db.apps.filter(a => a.group === g);
         if (!apps.length) return '';
         const open = S.openGroups.has(g) || apps.some(a => a.id === S.app);
-        const gst = getStats(rows.filter(r => apps.some(a => a.id === r.app) && (!S.mine || r.owner === ME)));
+        const gst = getStats(rows.filter(r => apps.some(a => a.id === r.app)));
         return `<div class="tree__group ${open ? 'is-open' : ''}" data-group="${esc(g)}">${icon('right')}<span>${esc(g)}</span><span class="pct">${gst.percent}%</span></div>
-        ${open ? apps.map(a => { const st = getStats(rows.filter(r => r.app === a.id && (!S.mine || r.owner === ME))); return `<button class="trow ${S.app === a.id ? 'is-selected' : ''}" data-app="${esc(a.id)}" title="${esc(a.id)} · ${esc(a.description)}">
-          <span class="trow__name">${esc(a.name)}</span>${bar(st)}<span class="pct">${st.percent}%</span></button>`; }).join('') : ''}`;
+        ${open ? apps.map(a => { const st = getStats(rows.filter(r => r.app === a.id)); return `<button class="trow ${S.app === a.id ? 'is-selected' : ''}" data-app="${esc(a.id)}" title="${esc(a.id)} · ${esc(a.description)}">
+          <span class="trow__name">${esc(a.name)}</span><span class="pct ${st.percent === 100 ? 'is-done' : ''}">${st.percent}%</span></button>`; }).join('') : ''}`;
       }).join('')}
     </div></aside>`;
 }
@@ -733,24 +765,29 @@ function stringsPanel() {
   const errors = scopeRows().filter(r => !ignored(r) && hasErrors(r)).length;
   const list = filteredRows();
   const app = appById(S.app);
-  const chips = [['all', 'Все', st.total, ''], ['untranslated', 'Без перевода', st.untranslated, '--st-untranslated'], ['auto', 'Автоперевод', st.auto, '--st-auto'], ['outdated', 'Устарело', st.outdated, '--st-outdated'], ['translated', 'Переведено', st.translated, '--st-translated'], ['errors', 'С ошибками', errors, '--st-error'], ['ignored', 'Ignored', st.ignored, '']];
+  const chips = [['all', 'Все', st.total, ''], ['untranslated', 'Без перевода', st.untranslated, '--st-untranslated'], ['auto', 'Автоперевод', st.auto, '--st-auto'], ['outdated', 'Устарело', st.outdated, '--st-outdated'], ['translated', 'Переведено', st.translated, '--st-translated']];
+  if (errors) chips.push(['errors', 'С ошибками', errors, '--st-error']);
+  const filtered = S.status !== 'all' || S.module !== 'all' || S.query || S.mine;
   return `<section class="panel panel--strings">
     <div class="panel__head"><span class="panel__title">${esc(app ? app.name : 'Все приложения')}${app ? `<span class="panel__count">${esc(app.id)}</span>` : ''}</span>
-      <span class="tag">${esc(currentLanguage().tag)} · ENCY ${esc(S.version)}</span><span class="spacer"></span>
-      <span class="pct" title="Доля Translated среди строк без Ignored">${st.percent}% · ${fmt(st.translated)} из ${fmt(st.total)}</span>
-      <button class="btn" data-act="autotranslate" ${!canEdit() ? 'disabled' : ''} title="Предложить автоперевод для строк без перевода">${icon('sparkles')}<span>Автоперевод</span></button></div>
+      <span class="pct" title="Доля Translated среди строк без Ignored">${st.percent}%</span><span class="spacer"></span>
+      <button class="btn" data-act="autotranslate" ${!canEdit() || !st.untranslated ? 'disabled' : ''} title="Предложить автоперевод для ${st.untranslated} строк без перевода">${icon('sparkles')}<span>Автоперевод</span></button>
+      <button class="btn" data-act="export" title="Скачать .lng для ${esc(app ? app.name : 'всех приложений')} · ${esc(currentLanguage().name)}">${icon('download')}<span>.lng</span></button></div>
     <div class="toolbar">
-      <label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Ключ, текст, перевод, ответственный" autocomplete="off"><kbd>/</kbd></label>
-      ${dd('module-select', 'Модуль', [opt('all', 'Все модули', S.module === 'all'), ...Object.entries(MODULES).map(([id, m]) => opt(id, m.label, S.module === id))].join(''))}
-      <span class="toolbar__sep"></span>
+      <label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Поиск по тексту или ключу" autocomplete="off"><kbd>/</kbd></label>
       ${chips.map(([id, label, n, dot]) => `<button class="fchip ${S.status === id ? 'is-active' : ''}" data-status="${id}">${dot ? `<span class="fchip__dot" style="--dot:var(${dot})"></span>` : ''}${label}<span class="fchip__n">${n}</span></button>`).join('')}
-      ${S.status !== 'all' || S.module !== 'all' || S.query || S.mine ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}
+      <span class="spacer"></span>
+      ${dd('module-select', '', [opt('all', 'Все модули', S.module === 'all'), ...Object.entries(MODULES).map(([id, m]) => opt(id, m.label, S.module === id))].join(''))}
+      <button class="fchip ${S.mine ? 'is-active' : ''}" data-act="toggle-mine" title="Только строки, за которые отвечаю я">${icon('user')}Мои</button>
+      ${filtered ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}
     </div>
     <div class="panel__body" id="strings-list">
-      <div class="grid-head"><span>English <small>эталон</small></span><span class="col-tr">${esc(currentLanguage().name)}</span><span class="col-meta">Модуль</span><span class="col-owner">Ответственный</span><span>Статус</span></div>
+      <div class="grid-head"><span>English</span><span class="col-tr">${esc(currentLanguage().name)}</span><span>Статус</span></div>
       ${list.length ? list.map(r => stringRow(r)).join('') : `<div class="empty-state">${icon('search')}<b>Строки не найдены</b><span>Измените запрос или фильтры</span></div>`}
     </div>
-    <div class="panel__foot"><span>${fmt(list.length)} строк${st.ignored ? ` · ${st.ignored} ignored` : ''}</span><span class="spacer"></span><span><kbd>J</kbd>/<kbd>K</kbd> строки · <kbd>Ctrl ↵</kbd> применить</span></div>
+    <div class="panel__foot"><span>${fmt(list.length)} ${plural(list.length, 'строка', 'строки', 'строк')}</span>
+      ${st.ignored ? `<label class="tgl"><input type="checkbox" id="ignored-toggle" ${S.showIgnored ? 'checked' : ''}><span class="tgl__track"></span><span>Ignored · ${st.ignored}</span></label>` : ''}
+      <span class="spacer"></span><span class="muted"><kbd>J</kbd>/<kbd>K</kbd> строки · <kbd>Ctrl ↵</kbd> применить</span></div>
   </section>`;
 }
 
@@ -760,74 +797,64 @@ function stringRow(r) {
   return `<button class="srow ${S.selected === r.id ? 'is-selected' : ''} ${ig ? 'is-ignored' : ''}" data-row="${esc(r.id)}" title="${esc(r.id)}">
     <span class="srow__src"><span class="ellipsis">${esc(source(r).replace(/\n/g, ' ↵ '))}</span>${nl ? `<span class="srow__nl" title="Переносы строк">↵${nl}</span>` : ''}</span>
     <span class="srow__tr">${t.text ? `<span class="ellipsis">${esc(t.text.replace(/\n/g, ' ↵ '))}</span>` : '<span class="empty">—</span>'}${err ? `<span class="srow__warn" title="Есть ошибки проверки">${icon('warning')}</span>` : ''}</span>
-    <span class="srow__meta"><span class="ellipsis">${esc(MODULES[r.module]?.label || r.module)}</span></span>
-    <span class="srow__owner ${r.owner === ME ? 'is-me' : ''}">${avatar(r.owner)}<span class="ellipsis">${esc(r.owner)}</span></span>
     <span>${ig ? statusBadge('ignored', 'Ignored') : statusBadge(t.status)}</span>
   </button>`;
 }
 
 function inspector() {
   const row = rows.find(r => r.id === S.selected);
-  if (!row) return `<aside class="panel panel--insp"><div class="panel__head"><span class="panel__title">Строка</span></div><div class="empty-state">${icon('translate')}<b>Выберите строку</b><span>Слева — список, здесь — перевод и контекст</span></div></aside>`;
+  if (!row) return `<aside class="panel panel--insp"><div class="panel__head"><span class="panel__title">Перевод</span></div><div class="empty-state">${icon('translate')}<b>Выберите строку</b><span>Слева список, здесь перевод</span></div></aside>`;
   const t = translation(row), ig = ignored(row), text = drafts[key(row)] ?? t.text, edit = canEdit() && !ig;
-  const checks = validate(source(row), text, db.dealers);
+  const checks = validate(source(row), text, db.dealers), failed = checks.filter(c => !c.ok);
   const matches = rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row));
+  const pending = matches.filter(r => !accepted(translation(r).status));
   const app = appById(row.app);
   const dirty = text !== t.text;
+  const suggestion = row.suggestions[S.lang];
+  const showSuggestion = edit && !text.trim() && suggestion;
+  const moduleLocked = db.excludedModules.includes(row.module);
   return `<aside class="panel panel--insp">
-    <div class="panel__head"><span class="panel__title">Строка</span><span class="spacer"></span>
+    <div class="panel__head"><span class="panel__title">Перевод</span>${ig ? statusBadge('ignored', 'Ignored') : statusBadge(t.status)}<span class="spacer"></span>
       <button class="ibtn" data-act="previous" title="Предыдущая (K)">${icon('up')}</button><button class="ibtn" data-act="next" title="Следующая (J)">${icon('down')}</button>
       <button class="ibtn" data-act="close-editor" title="Закрыть">${icon('close')}</button></div>
     <div class="insp"><div class="insp__scroll">
-      <div class="trow-title"><span class="ellipsis" title="${esc(row.code)}">${esc(row.code)}</span>${ig ? statusBadge('ignored', 'Ignored') : statusBadge(t.status)}</div>
-      <div class="irow"><span class="irow__label">Ключ</span><span class="irow__val"><code class="ellipsis">${esc(row.id)}</code><button class="ibtn" data-act="copy-key" title="Скопировать ключ">${icon('copy')}</button></span></div>
-      <div class="irow"><span class="irow__label">Приложение</span><span class="irow__val"><span class="ellipsis">${esc(app?.name || row.app)} <span class="muted">${esc(row.app)}</span></span></span></div>
-      <div class="irow"><span class="irow__label">Модуль</span><span class="irow__val"><span class="tag">${esc(MODULES[row.module]?.label || row.module)}</span><span class="muted ellipsis">${esc(row.context)}</span></span></div>
-      <div class="irow"><span class="irow__label">Ответственный</span><span class="irow__val">${avatar(row.owner)}<span class="ellipsis">${esc(row.owner)}</span>${row.owner === ME ? '<span class="tag tag--green">вы</span>' : ''}</span></div>
-      <div class="irow"><span class="irow__label">Ignored</span><span class="irow__val"><label class="tgl" title="Строку переводить не нужно: технический идентификатор, ось, формула"><input type="checkbox" id="ignore-toggle" ${ig ? 'checked' : ''} ${!isAdmin() || db.excludedModules.includes(row.module) ? 'disabled' : ''}><span class="tgl__track"></span><span>${db.excludedModules.includes(row.module) ? 'модуль исключён' : ig ? 'не переводить' : 'переводить'}</span></label>${row.reason && ig ? `<span class="muted">· ${esc(row.reason)}</span>` : ''}</span></div>
-
-      <div class="sect"><div class="sect__head"><span class="lang">EN</span><b>Эталон</b><button class="ibtn" data-act="copy-source" title="Скопировать">${icon('copy')}</button></div>
-        <div class="srcbox">${showNl(source(row))}</div>
-        ${t.status === 'outdated' && row.previousSource && S.version === '18.0' ? `<div class="notice notice--amber">${icon('history')}<span>Эталон изменился в 18.0. Было: <del>${esc(row.previousSource)}</del>. Проверьте перевод и подтвердите.</span></div>` : ''}
+      <div class="sect"><div class="sect__head"><span class="lang">EN</span><b>${esc(app?.name || row.app)}</b><span class="muted ellipsis">${esc(row.context)}</span><button class="ibtn" data-act="copy-source" title="Скопировать эталон">${icon('copy')}</button></div>
+        <div class="srcbox srcbox--lg">${showNl(source(row))}</div>
+        ${t.status === 'outdated' && row.previousSource && S.version === '18.0' ? `<div class="notice notice--amber">${icon('history')}<span>Эталон изменился. Было: <del>${esc(row.previousSource)}</del></span></div>` : ''}
         ${row.note ? `<div class="notice">${icon('info')}<span>${esc(row.note)}</span></div>` : ''}</div>
 
-      <div class="sect"><div class="sect__head"><span class="lang is-target">${esc(currentLanguage().tag)}</span><b>${esc(currentLanguage().name)}</b>${dirty ? '<span class="tag tag--amber">черновик</span>' : ''}</div>
-        <div class="editor"><textarea id="translation-input" rows="3" lang="${esc(S.lang)}" spellcheck="true" placeholder="${edit ? 'Введите перевод…' : '—'}" ${edit ? '' : 'disabled'}>${esc(text)}</textarea>
-          <div class="editor__tools">
-            <button class="ibtn" data-act="insert-newline" title="Вставить перенос строки (Shift+Enter)" ${edit ? '' : 'disabled'}>${icon('enter')}</button>
-            <button class="ibtn" data-act="suggest" title="Подставить автоперевод" ${edit ? '' : 'disabled'}>${icon('sparkles')}</button>
-            <button class="ibtn" data-act="copy-source-to" title="Скопировать эталон в перевод" ${edit ? '' : 'disabled'}>${icon('arrow')}</button>
-            <span class="spacer"></span><small id="char-count">${text.length} симв.</small></div></div>
-        ${t.status === 'auto' && !dirty ? `<div class="notice notice--blue">${icon('sparkles')}<span>Автоперевод. Проверьте смысл и подтвердите — иначе строка не попадёт в .lng.</span></div>` : ''}
-        ${!canEdit() ? `<div class="notice">${icon('lock')}<span>Язык доступен вашей компании только для чтения. Доступ выдаёт администратор.</span></div>` : ''}
+      <div class="sect"><div class="sect__head"><span class="lang is-target">${esc(currentLanguage().tag)}</span><b>${esc(currentLanguage().name)}</b>${dirty ? '<span class="tag tag--amber">не применено</span>' : ''}<span class="spacer"></span>
+          <button class="ibtn" data-act="insert-newline" title="Перенос строки (Shift+Enter)" ${edit ? '' : 'disabled'}>${icon('enter')}</button>
+          <button class="ibtn" data-act="copy-source-to" title="Скопировать эталон в перевод" ${edit ? '' : 'disabled'}>${icon('arrow')}</button></div>
+        <div class="editor"><textarea id="translation-input" rows="3" lang="${esc(S.lang)}" spellcheck="true" placeholder="${edit ? 'Перевод…' : ''}" ${edit ? '' : 'disabled'}>${esc(text)}</textarea></div>
+        ${showSuggestion ? `<button class="suggest" data-act="suggest">${icon('sparkles')}<span class="suggest__text">${esc(suggestion)}</span><span class="suggest__cta">Вставить</span></button>` : ''}
+        ${t.status === 'auto' && !dirty ? `<div class="notice notice--blue">${icon('sparkles')}<span>Автоперевод. Проверьте и примените, иначе строка не попадёт в .lng.</span></div>` : ''}
+        ${ig ? `<div class="notice">${icon('eyeOff')}<span>Строка не переводится${row.reason ? ': ' + esc(row.reason).toLowerCase() : ''}${moduleLocked ? ' (модуль исключён)' : ''}.</span></div>` : ''}
+        ${!canEdit() ? `<div class="notice">${icon('lock')}<span>Язык доступен вашей компании только для чтения.</span></div>` : ''}
         <div class="checks" id="validation-checks">${renderChecks(checks)}</div></div>
 
-      <div class="sect"><div class="seg" role="tablist">${[['context', 'Контекст'], ['matches', 'Совпадения', matches.length], ['history', 'История', t.history.length]].map(([id, label, n]) => `<button role="tab" class="${S.tab === id ? 'is-active' : ''}" data-tab="${id}">${label}${n !== undefined ? `<small>${n}</small>` : ''}</button>`).join('')}</div>
-        ${inspectorTab(row, t, matches)}</div>
+      ${matches.length ? `<div class="sect"><div class="sect__head"><b>Такой же текст ещё в ${matches.length} ${plural(matches.length, 'месте', 'местах', 'местах')}</b><span class="muted">${pending.length ? `без перевода: ${pending.length}` : 'все переведены'}</span></div>
+        ${matches.slice(0, 6).map(r => { const mt = translation(r); return `<div class="match"><span class="ellipsis" title="${esc(r.id)}">${esc(appById(r.app)?.name || r.app)} <span class="muted">· ${esc(r.code)}</span></span>${statusBadge(mt.status)}</div>`; }).join('')}${matches.length > 6 ? `<div class="muted">и ещё ${matches.length - 6}</div>` : ''}</div>` : ''}
+
+      <details class="acc" ${S.detailsOpen ? 'open' : ''} id="details"><summary class="acc__head">${icon('right')}<b>Подробности</b><span class="muted">ключ, модуль, ответственный, история</span></summary>
+        <div class="acc__body">
+          <div class="irow"><span class="irow__label">Ключ</span><span class="irow__val"><code class="ellipsis">${esc(row.id)}</code><button class="ibtn" data-act="copy-key" title="Скопировать ключ">${icon('copy')}</button></span></div>
+          <div class="irow"><span class="irow__label">Модуль</span><span class="irow__val"><span class="ellipsis">${esc(MODULES[row.module]?.label || row.module)}</span></span></div>
+          <div class="irow"><span class="irow__label">Ответственный</span><span class="irow__val">${avatar(row.owner)}<span class="ellipsis">${esc(row.owner)}</span>${row.owner === ME ? '<span class="tag tag--green">вы</span>' : ''}</span></div>
+          <div class="irow"><span class="irow__label">Ignored</span><span class="irow__val"><label class="tgl"><input type="checkbox" id="ignore-toggle" ${ig ? 'checked' : ''} ${!isAdmin() || moduleLocked ? 'disabled' : ''}><span class="tgl__track"></span><span>${moduleLocked ? 'модуль исключён' : ig ? 'не переводить' : 'переводить'}</span></label></span></div>
+          <div class="irow"><span class="irow__label">Где в окне</span><span class="irow__val"><button class="btn btn--ghost" data-act="context">${icon('window')}Схема окна</button></span></div>
+          ${t.history.length ? `<div class="irow irow--top"><span class="irow__label">История</span><span class="irow__val"><div class="hist">${[...t.history].reverse().slice(0, 4).map(h => `<div class="hist__e"><div class="hist__meta"><b>${esc(h.author)}</b><span>${new Date(h.date).toLocaleString('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>${statusBadge(h.status)}</div><div class="hist__text">${esc(h.text)}</div></div>`).join('')}</div></span></div>` : ''}
+        </div></details>
     </div>
     <div class="insp__foot">${ig
-      ? `<button class="btn btn--wide" data-act="ignore" ${!isAdmin() || db.excludedModules.includes(row.module) ? 'disabled' : ''}>Вернуть в перевод</button>`
-      : `<div class="row"><button class="btn btn--primary" id="apply-button" data-act="apply" ${!edit || checks.some(c => !c.ok) ? 'disabled' : ''}>${icon('check')}Применить<kbd>Ctrl ↵</kbd></button><button class="btn btn--secondary" data-act="apply-next" ${!edit || checks.some(c => !c.ok) ? 'disabled' : ''}>Применить и далее</button></div>
-         ${matches.length ? `<button class="btn btn--wide" data-act="apply-matches" ${!edit || !text.trim() ? 'disabled' : ''}>${icon('copy')}Перевести так же ещё ${matches.length} ${plural(matches.length, 'строку', 'строки', 'строк')}</button>` : ''}`}
+      ? `<button class="btn btn--wide" data-act="ignore" ${!isAdmin() || moduleLocked ? 'disabled' : ''}>Вернуть в перевод</button>`
+      : `<div class="row"><button class="btn btn--primary" id="apply-button" data-act="apply-next" ${!edit || failed.length || !text.trim() ? 'disabled' : ''}>${icon('check')}Применить<kbd>Ctrl ↵</kbd></button>${pending.length ? `<button class="btn btn--secondary" data-act="apply-matches" ${!edit || failed.length || !text.trim() ? 'disabled' : ''} title="Применить этот перевод к строкам с таким же текстом">${icon('copy')}И ещё ${pending.length}</button>` : ''}</div>`}
     </div></div></aside>`;
 }
 const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 10 || h >= 20) ? b : c; };
-const renderChecks = checks => checks.map(c => `<div class="check ${c.ok ? 'ok' : 'fail'}">${icon(c.ok ? 'check' : 'warning')}<span>${esc(c.label)}</span></div>`).join('');
+const renderChecks = checks => { const f = checks.filter(c => !c.ok); return f.length ? f.map(c => `<div class="check fail">${icon('warning')}<span>${esc(c.label)}</span></div>`).join('') : `<div class="check ok">${icon('check')}<span>Параметры, переносы и контакты в порядке</span></div>`; };
 
-function inspectorTab(row, t, matches) {
-  if (S.tab === 'history') {
-    if (!t.history.length) return `<p class="muted">Перевод ещё не применялся.</p>`;
-    return `<div class="hist">${[...t.history].reverse().map(h => `<div class="hist__e">${avatar(h.author)}<div><div class="hist__meta"><b>${esc(h.author)}</b><span>${new Date(h.date).toLocaleString('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>${statusBadge(h.status)}</div><div class="hist__text">${esc(h.text)}</div></div></div>`).join('')}</div>`;
-  }
-  if (S.tab === 'matches') {
-    if (!matches.length) return `<p class="muted">Такой же исходной строки в других местах нет.</p>`;
-    return `<p class="muted">Одинаковый эталон в ${matches.length} ${plural(matches.length, 'строке', 'строках', 'строках')}. Кнопка внизу применит текущий перевод ко всем отмеченным.</p>
-      ${matches.map(r => { const mt = translation(r); return `<label class="match"><input type="checkbox" class="ck" name="match-id" value="${esc(r.id)}" ${accepted(mt.status) ? '' : 'checked'}><span class="ellipsis" title="${esc(r.id)}">${esc(appById(r.app)?.name || r.app)} · ${esc(r.code)}</span>${statusBadge(mt.status)}</label>`; }).join('')}`;
-  }
-  return `<button class="win" data-act="context" title="Открыть схему окна"><div class="win__bar"><i></i><i></i><i></i><span>${esc(appById(row.app)?.name || row.app)} — ${esc(row.context.split(' → ')[0])}</span></div>
-    <div class="win__body"><div class="win__row"><span>${esc(row.context.split(' → ')[1] || 'Параметр')}</span><span class="win__ctl is-hl">${esc(source(row).split('\n')[0])}</span></div><div class="win__row"><span>Значение</span><span class="win__ctl"></span></div><div class="win__row"><span>Режим</span><span class="win__ctl"></span></div><div class="win__btns"><span>OK</span><span>Cancel</span></div></div></button>
-    <p class="muted">Схема окна показывает, где строка появится в интерфейсе. В производственной версии здесь снимок окна ENCY, привязанный к ключу.</p>`;
-}
+const windowScheme = row => `<div class="win"><div class="win__bar"><i></i><i></i><i></i><span>${esc(appById(row.app)?.name || row.app)} — ${esc(row.context.split(' → ')[0])}</span></div><div class="win__body"><div class="win__row"><span>${esc(row.context.split(' → ')[1] || 'Параметр')}</span><span class="win__ctl is-hl">${esc(source(row).split('\n')[0])}</span></div><div class="win__row"><span>Значение</span><span class="win__ctl"></span></div><div class="win__row"><span>Режим</span><span class="win__ctl"></span></div><div class="win__btns"><span>OK</span><span>Cancel</span></div></div></div>`;
 
 function translationsPage() {
   return `<div class="workspace workspace--rows">${appsTree()}${stringsPanel()}${inspector()}</div>`;
@@ -973,7 +1000,8 @@ function applyCurrent(next = false) {
   if (checks.some(c => !c.ok)) { toast(checks.find(c => !c.ok).label, 'warning'); return; }
   commit(row, text); persist();
   if (next) moveRow(1); else render();
-  toast('Перевод применён. Строка попадёт в .lng.');
+  $('#translation-input')?.focus();
+  toast('Перевод применён');
 }
 function moveRow(delta) {
   const list = filteredRows(); if (!list.length) return;
@@ -1015,6 +1043,7 @@ function action(name) {
     case 'close-editor': S.editorOpen = false; render(); return;
     case 'theme': db.theme = db.theme === 'dark' ? 'light' : 'dark'; persist(); render(); return;
     case 'apply': applyCurrent(); return;
+    case 'toggle-mine': S.mine = !S.mine; render(); return;
     case 'apply-next': applyCurrent(true); return;
     case 'next': moveRow(1); return;
     case 'previous': moveRow(-1); return;
@@ -1061,10 +1090,9 @@ function action(name) {
     }
     case 'apply-matches': {
       if (!row || !canEdit()) return;
-      const ids = $('input[name="match-id"]:checked').map(e => e.value);
-      const targets = S.tab === 'matches' && ids.length ? rows.filter(r => ids.includes(r.id)) : rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row) && !accepted(translation(r).status));
+      const targets = rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row) && !accepted(translation(r).status));
       const text = currentDraft(row);
-      if (!targets.length) { toast('Все одинаковые строки уже подтверждены. Отметьте их на вкладке «Совпадения», чтобы перезаписать.', 'warning'); return; }
+      if (!targets.length) { toast('Все одинаковые строки уже переведены.', 'warning'); return; }
       openModal('Перевести одинаковые строки', `<p>Перевод «${esc(text)}» будет применён к текущей строке и ещё ${targets.length} ${plural(targets.length, 'строке', 'строкам', 'строкам')} с таким же эталоном на языке «${esc(currentLanguage().name)}».</p><p class="muted">Строки с ошибками проверки будут пропущены. Одна кнопка вместо пятисот повторов «OK».</p>`,
         cancelBtn + `<button class="btn btn--primary" data-act="confirm-matches" data-ids="${esc(targets.map(t => t.id).join('|'))}">${icon('copy')}Применить ко всем</button>`);
       return;
@@ -1075,7 +1103,7 @@ function action(name) {
       const text = currentDraft(row);
       applyBatch([row, ...rows.filter(r => ids.includes(r.id))], () => text); return;
     }
-    case 'context': if (row) openModal('Контекст строки', `<span class="tag">схема окна · демонстрация</span><p><b>${esc(appById(row.app)?.name || row.app)}</b> → ${esc(row.context)}</p><p>В производственной версии к ключу привязывается реальный снимок окна ENCY или Tuner с подсветкой элемента. Это снимает вопрос «что имелось в виду» у переводчика и разработчика.</p>`, '<button class="btn btn--primary" data-act="close-modal">Понятно</button>'); return;
+    case 'context': if (row) openModal('Где строка в интерфейсе', windowScheme(row) + `<p><b>${esc(appById(row.app)?.name || row.app)}</b> → ${esc(row.context)}</p><p>В производственной версии к ключу привязывается реальный снимок окна ENCY или Tuner с подсветкой элемента. Это снимает вопрос «что имелось в виду» у переводчика и разработчика.</p>`, '<button class="btn btn--primary" data-act="close-modal">Понятно</button>'); return;
     case 'profile':
       openModal('Роль в прототипе', `<p class="muted">Демонстрация прав доступа без реальной авторизации.</p><form id="role-form" class="form">
         <label class="match"><input type="radio" class="ck" name="role" value="admin" ${isAdmin() ? 'checked' : ''}><span>Администратор — все языки, приложения и настройки</span></label>
@@ -1104,9 +1132,8 @@ document.addEventListener('click', e => {
   if (d.page) { S.page = d.page; location.hash = d.page; render(); return; }
   if (d.app) { goApp(d.app); return; }
   if (d.group !== undefined) { S.openGroups.has(d.group) ? S.openGroups.delete(d.group) : S.openGroups.add(d.group); render(); return; }
-  if (d.row) { S.selected = d.row; S.editorOpen = true; render(); return; }
+  if (d.row) { S.selected = d.row; S.editorOpen = true; render(); $('#translation-input')?.focus(); return; }
   if (d.status) { S.status = S.status === d.status && d.status !== 'all' ? 'all' : d.status; S.showIgnored = S.status === 'ignored'; render(); return; }
-  if (d.tab) { S.tab = d.tab; render(); return; }
   if (d.openLang) { goApp('all', d.openLang); return; }
   if (d.progressApp) { goApp(d.progressApp, d.progressLang); return; }
 });
@@ -1114,12 +1141,13 @@ document.addEventListener('input', e => {
   if (e.target.id === 'translation-input') updateDraft(e.target.value);
   if (e.target.id === 'string-search') { S.query = e.target.value; render(); }
 });
+document.addEventListener('toggle', e => { if (e.target.id === 'details') S.detailsOpen = e.target.open; }, true);
 document.addEventListener('change', e => {
   const el = e.target;
   if (el.id === 'language-select') { S.lang = el.value; render(); }
   if (el.id === 'version-select') { S.version = el.value; render(); }
   if (el.id === 'module-select') { S.module = el.value; render(); }
-  if (el.id === 'mine-toggle') { S.mine = el.checked; render(); }
+  if (el.id === 'ignored-toggle') { S.showIgnored = el.checked; render(); }
   if (el.id === 'ignore-toggle') { action('ignore'); }
   if (el.dataset.access) {
     if (!adminOnly()) { el.checked = !el.checked; return; }
@@ -1177,7 +1205,7 @@ document.addEventListener('submit', e => {
 document.addEventListener('keydown', e => {
   if ($('#modal').open) return;
   const inField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && S.page === 'translations') { e.preventDefault(); applyCurrent(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && S.page === 'translations') { e.preventDefault(); applyCurrent(true); return; }
   if (e.target.id === 'translation-input' && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); action('insert-newline'); return; }
   if (inField) { if (e.key === 'Escape') e.target.blur(); return; }
   if (S.page !== 'translations') return;

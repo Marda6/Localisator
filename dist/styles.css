@@ -382,3 +382,36 @@ dialog::backdrop { background:var(--ec-bg-80); }
   .header { gap:4px; padding:0 8px; }
   .brand__name small, .header__sep { display:none; }
 }
+
+/* ============================================= v2.1: фокус на переводе === */
+.grid-head, .srow { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 120px; }
+.srcbox--lg { font-size:13px; line-height:18px; padding:8px 10px; }
+.pct.is-done { color:var(--ec-green); }
+.trow { padding-left:16px; }
+.tree__group { padding-left:2px; }
+/* предложение автоперевода под полем */
+.suggest { display:flex; align-items:center; gap:8px; width:100%; min-height:28px; padding:4px 8px; text-align:left;
+  border-radius:var(--ec-radius); border:1px dashed var(--ec-fg-16); background:var(--ec-fg-4); color:var(--ec-fg-72); transition:background .12s,border-color .12s; }
+.suggest:hover { background:var(--ec-fg-8); border-color:var(--st-auto); color:var(--ec-fg-96); }
+.suggest .icon { color:var(--st-auto); }
+.suggest__text { flex:1; min-width:0; white-space:pre-wrap; word-break:break-word; }
+.suggest__cta { flex-shrink:0; color:var(--st-auto); font-weight:600; }
+/* аккордеон «Подробности» */
+.acc { border-top:1px solid var(--divider); padding-top:4px; }
+.acc__head { display:flex; align-items:center; gap:6px; height:24px; list-style:none; cursor:pointer; color:var(--ec-fg-64); border-radius:var(--ec-radius); padding:0 4px; margin:0 -4px; }
+.acc__head::-webkit-details-marker { display:none; }
+.acc__head:hover { background:var(--ec-fg-4); color:var(--ec-fg-96); }
+.acc__head b { font-weight:600; color:var(--ec-fg-80); }
+.acc__head .icon { color:var(--ec-fg-48); transition:transform .12s; }
+.acc[open] .acc__head .icon { transform:rotate(90deg); }
+.acc[open] .acc__head .muted { display:none; }
+.acc__body { display:flex; flex-direction:column; gap:2px; padding-top:4px; }
+.irow--top { align-items:flex-start; }
+.irow--top .irow__label { padding-top:4px; }
+.irow--top .irow__val { display:block; }
+.irow .hist__e { grid-template-columns:1fr; padding:2px 0; }
+.insp__foot .row .btn--secondary { flex:0 0 auto; }
+.panel__head .status { margin-left:2px; }
+.panel__foot .tgl { color:var(--ec-fg-48); }
+@media (max-width:1280px) { .grid-head, .srow { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 112px; } }
+@media (max-width:760px) { .grid-head, .srow { grid-template-columns:minmax(0,1fr) 100px; } }
