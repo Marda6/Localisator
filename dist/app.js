@@ -67,7 +67,7 @@ const PAGES = ['translations', 'progress', 'admin', 'guide'];
 const S = {
   page: 'translations', app: 'CAM', lang: 'ru', version: '18.0',
   status: 'all', module: 'all', query: '', mine: false, showIgnored: false,
-  selected: 'CAM.Toolpath.Calculate', tab: 'context',
+  selected: 'CAM.Toolpath.Calculate', tab: 'context', matchSel: new Set(), matchSelFor: null,
   role: 'admin', dealer: 'dealer-a',
   openGroups: new Set(['ENCY']), editorOpen: false
 };
@@ -212,6 +212,7 @@ function inspector() {
   const checks = validate(source(row), text, db.dealers), failed = checks.filter(c => !c.ok);
   const matches = rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row));
   const pending = matches.filter(r => !accepted(translation(r).status));
+  if (S.matchSelFor !== row.id) { S.matchSelFor = row.id; S.matchSel = new Set(pending.map(r => r.id)); }
   const app = appById(row.app);
   const dirty = text !== t.text;
   const suggestion = row.suggestions[S.lang];
@@ -241,7 +242,7 @@ function inspector() {
     </div>
     <div class="insp__foot">${ig
       ? `<button class="btn btn--wide" data-act="ignore" ${!isAdmin() || moduleLocked ? 'disabled' : ''}>Вернуть в перевод</button>`
-      : `<div class="row"><button class="btn btn--primary" id="apply-button" data-act="apply-next" ${!edit || failed.length || !text.trim() ? 'disabled' : ''}>${icon('check')}Применить<kbd>Ctrl ↵</kbd></button>${pending.length ? `<button class="btn btn--secondary" data-act="apply-matches" ${!edit || failed.length || !text.trim() ? 'disabled' : ''} title="Применить этот перевод к строкам с таким же текстом">${icon('copy')}И ещё ${pending.length}</button>` : ''}</div>`}
+      : `<div class="row"><button class="btn btn--primary" id="apply-button" data-act="apply-next" ${!edit || failed.length || !text.trim() ? 'disabled' : ''}>${icon('check')}Применить<kbd>Ctrl ↵</kbd></button>${matches.length ? `<button class="btn btn--secondary" data-act="apply-matches" ${!edit || failed.length || !text.trim() || !S.matchSel.size ? 'disabled' : ''} title="Применить этот перевод к отмеченным строкам с таким же текстом">${icon('copy')}И ещё ${S.matchSel.size}</button>` : ''}</div>`}
     </div></div></aside>`;
 }
 const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 10 || h >= 20) ? b : c; };
@@ -256,8 +257,12 @@ function inspectorTab(row, t, matches, pending, ig, moduleLocked) {
   }
   if (S.tab === 'matches') {
     if (!matches.length) return `<p class="muted">Такого же текста в других местах нет.</p>`;
-    return `<p class="muted">Такой же эталон ещё в ${matches.length} ${plural(matches.length, 'месте', 'местах', 'местах')}${pending.length ? `, без перевода: ${pending.length}. Кнопка «И ещё ${pending.length}» внизу применит текущий перевод к ним.` : '. Все уже переведены.'}</p>
-      ${matches.map(r => { const mt = translation(r); return `<div class="match"><span class="ellipsis" title="${esc(r.id)}">${esc(appById(r.app)?.name || r.app)} <span class="muted">· ${esc(r.code)}</span></span>${statusBadge(mt.status)}</div>`; }).join('')}`;
+    const n = S.matchSel.size, text = currentDraft(row);
+    return `<div class="mtoolbar"><label class="tgl"><input type="checkbox" id="match-all" ${n === matches.length ? 'checked' : ''}><span class="tgl__track"></span><span>${n ? `Отмечено ${n} из ${matches.length}` : 'Отметить все'}</span></label><span class="spacer"></span>
+        <button class="btn btn--secondary" data-act="apply-matches" ${!n || !text.trim() || !canEdit() ? 'disabled' : ''} title="Применить текущий перевод к отмеченным строкам">${icon('copy')}Применить к ${n}</button></div>
+      ${matches.map(r => { const mt = translation(r), on = S.matchSel.has(r.id); return `<div class="mcard ${on ? 'is-on' : ''}"><input type="checkbox" class="ck" name="match-id" value="${esc(r.id)}" ${on ? 'checked' : ''} aria-label="Отметить">
+        <button class="mcard__body" data-goto="${esc(r.id)}" title="Открыть строку"><span class="mcard__where"><b>${esc(appById(r.app)?.name || r.app)}</b><span class="muted">· ${esc(MODULES[r.module]?.label || r.module)}</span></span><span class="mcard__text ${mt.text ? '' : 'is-empty'}">${mt.text ? esc(mt.text) : 'нет перевода'}</span></button>
+        ${statusBadge(mt.status)}</div>`; }).join('')}`;
   }
   return `<div class="irow"><span class="irow__label">Ключ</span><span class="irow__val"><code class="ellipsis">${esc(row.id)}</code><button class="ibtn" data-act="copy-key" title="Скопировать ключ">${icon('copy')}</button></span></div>
     <div class="irow"><span class="irow__label">Модуль</span><span class="irow__val"><span class="ellipsis">${esc(MODULES[row.module]?.label || row.module)}</span></span></div>
@@ -500,9 +505,9 @@ function action(name) {
     }
     case 'apply-matches': {
       if (!row || !canEdit()) return;
-      const targets = rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row) && !accepted(translation(r).status));
+      const targets = rows.filter(r => S.matchSel.has(r.id));
       const text = currentDraft(row);
-      if (!targets.length) { toast('Все одинаковые строки уже переведены.', 'warning'); return; }
+      if (!targets.length) { toast('Отметьте строки на вкладке «Совпадения».', 'warning'); return; }
       openModal('Перевести одинаковые строки', `<p>Перевод «${esc(text)}» будет применён к текущей строке и ещё ${targets.length} ${plural(targets.length, 'строке', 'строкам', 'строкам')} с таким же эталоном на языке «${esc(currentLanguage().name)}».</p><p class="muted">Строки с ошибками проверки будут пропущены. Одна кнопка вместо пятисот повторов «OK».</p>`,
         cancelBtn + `<button class="btn btn--primary" data-act="confirm-matches" data-ids="${esc(targets.map(t => t.id).join('|'))}">${icon('copy')}Применить ко всем</button>`);
       return;
@@ -543,6 +548,7 @@ document.addEventListener('click', e => {
   if (d.app) { goApp(d.app); return; }
   if (d.group !== undefined) { S.openGroups.has(d.group) ? S.openGroups.delete(d.group) : S.openGroups.add(d.group); render(); return; }
   if (d.tab) { S.tab = d.tab; render(); return; }
+  if (d.goto) { const r = rows.find(x => x.id === d.goto); if (r) { S.app = r.app; S.selected = r.id; render(); $(`[data-row="${CSS.escape(r.id)}"]`)?.scrollIntoView({block: 'nearest'}); } return; }
   if (d.row) { S.selected = d.row; S.editorOpen = true; render(); $('#translation-input')?.focus(); return; }
   if (d.status) { S.status = S.status === d.status && d.status !== 'all' ? 'all' : d.status; S.showIgnored = S.status === 'ignored'; render(); return; }
   if (d.openLang) { goApp('all', d.openLang); return; }
@@ -557,6 +563,8 @@ document.addEventListener('change', e => {
   if (el.id === 'language-select') { S.lang = el.value; render(); }
   if (el.id === 'version-select') { S.version = el.value; render(); }
   if (el.id === 'module-select') { S.module = el.value; render(); }
+  if (el.name === 'match-id') { el.checked ? S.matchSel.add(el.value) : S.matchSel.delete(el.value); render(); }
+  if (el.id === 'match-all') { const row = editorRow(); S.matchSel = el.checked ? new Set(rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row)).map(r => r.id)) : new Set(); render(); }
   if (el.id === 'ignored-toggle') { S.showIgnored = el.checked; render(); }
   if (el.id === 'ignore-toggle') { action('ignore'); }
   if (el.dataset.access) {

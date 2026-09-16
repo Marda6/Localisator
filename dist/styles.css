@@ -447,3 +447,18 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .tabpane p.muted { padding:4px 0; }
 .win--mini { margin-top:4px; }
 .win--mini .win__body { padding:6px 8px; }
+
+/* ============================================= v2.4: совпадения как карточки === */
+.mtoolbar { display:flex; align-items:center; gap:8px; height:28px; margin-bottom:4px; }
+.mtoolbar .tgl { color:var(--ec-fg-64); }
+.mcard { display:grid; grid-template-columns:14px minmax(0,1fr) auto; align-items:center; gap:8px; padding:4px 8px 4px 8px; margin-bottom:2px;
+  border-radius:var(--ec-radius); background:var(--ec-fg-4); border:1px solid transparent; transition:background .12s,border-color .12s; }
+.mcard:hover { background:var(--ec-fg-6); }
+.mcard.is-on { border-color:var(--ec-fg-12); }
+.mcard__body { display:flex; flex-direction:column; gap:0; min-width:0; text-align:left; padding:0; border-radius:2px; }
+.mcard__body:hover .mcard__where b { color:var(--ec-fg-100); text-decoration:underline; text-decoration-color:var(--ec-fg-24); }
+.mcard__where { display:flex; gap:4px; align-items:center; height:18px; overflow:hidden; white-space:nowrap; }
+.mcard__where b { font-weight:500; color:var(--ec-fg-80); }
+.mcard__text { color:var(--ec-fg-64); height:18px; line-height:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mcard__text.is-empty { color:var(--ec-fg-32); font-style:italic; }
+.mcard .status { padding-right:0; }
