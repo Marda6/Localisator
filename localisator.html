@@ -781,6 +781,8 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .heat-legend__b.band-1 { background:color-mix(in srgb, var(--band-1) 54%, var(--ec-card-2)); }
 .heat-legend__b.band-2 { background:color-mix(in srgb, var(--band-2) 54%, var(--ec-card-2)); }
 .heat-legend__b.band-3 { background:color-mix(in srgb, var(--band-3) 54%, var(--ec-card-2)); }
+/* v2.22.2: итоги групп тоже гаснут при фильтре по ступени */
+.heat__group .heat__cell--sum.is-dim, .heat__group.is-open .heat__cell--sum.is-dim { opacity:.18; }
 
 </style>
 </head>
