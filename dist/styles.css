@@ -498,3 +498,24 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .mcard { grid-template-columns:16px minmax(0,1fr) auto; }
 .cell-langs label .ck { width:14px; height:14px; }
 .mcard.is-on { border-color:transparent; background:var(--ec-fg-6); }
+
+/* ============================================= v2.7: история как лента === */
+.tl { list-style:none; position:relative; padding:4px 0 0 0; }
+.tl__e { position:relative; padding:0 0 14px 24px; }
+.tl__e::before { content:''; position:absolute; left:7px; top:18px; bottom:-2px; width:1px; background:var(--ec-fg-12); }
+.tl__e:last-child::before { display:none; }
+.tl__dot { position:absolute; left:3px; top:5px; width:9px; height:9px; border-radius:999px; background:var(--st-untranslated); box-shadow:0 0 0 3px var(--ec-card-2); }
+.tl__dot.status--translated { background:var(--st-translated); }
+.tl__dot.status--outdated { background:var(--st-outdated); }
+.tl__dot.status--auto { background:var(--st-auto); }
+.tl__head { display:flex; align-items:center; gap:6px; height:20px; }
+.tl__who { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ec-fg-80); }
+.tl__who b { font-weight:600; color:var(--ec-fg-96); }
+.tl__when { color:var(--ec-fg-48); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.tl__text { margin-top:6px; padding:6px 8px; border-radius:var(--ec-radius); background:var(--ec-fg-4); border-left:2px solid var(--ec-fg-12); color:var(--ec-fg-80); white-space:pre-wrap; word-break:break-word; }
+.tl__e.is-current .tl__text { color:var(--ec-fg-96); border-left-color:var(--ec-fg-32); }
+.tl__restore { display:inline-flex; align-items:center; gap:4px; height:20px; margin-top:4px; padding:0 4px; margin-left:-4px; border-radius:2px; color:var(--ec-fg-48); }
+.tl__restore:hover { color:var(--ec-fg-96); background:var(--ec-fg-8); }
+.tl__restore .icon { width:12px; height:12px; }
+.empty-state--sm { padding:20px 8px; gap:4px; }
+.empty-state--sm .icon { width:16px; height:16px; }

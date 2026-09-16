@@ -505,6 +505,27 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .cell-langs label .ck { width:14px; height:14px; }
 .mcard.is-on { border-color:transparent; background:var(--ec-fg-6); }
 
+/* ============================================= v2.7: история как лента === */
+.tl { list-style:none; position:relative; padding:4px 0 0 0; }
+.tl__e { position:relative; padding:0 0 14px 24px; }
+.tl__e::before { content:''; position:absolute; left:7px; top:18px; bottom:-2px; width:1px; background:var(--ec-fg-12); }
+.tl__e:last-child::before { display:none; }
+.tl__dot { position:absolute; left:3px; top:5px; width:9px; height:9px; border-radius:999px; background:var(--st-untranslated); box-shadow:0 0 0 3px var(--ec-card-2); }
+.tl__dot.status--translated { background:var(--st-translated); }
+.tl__dot.status--outdated { background:var(--st-outdated); }
+.tl__dot.status--auto { background:var(--st-auto); }
+.tl__head { display:flex; align-items:center; gap:6px; height:20px; }
+.tl__who { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ec-fg-80); }
+.tl__who b { font-weight:600; color:var(--ec-fg-96); }
+.tl__when { color:var(--ec-fg-48); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.tl__text { margin-top:6px; padding:6px 8px; border-radius:var(--ec-radius); background:var(--ec-fg-4); border-left:2px solid var(--ec-fg-12); color:var(--ec-fg-80); white-space:pre-wrap; word-break:break-word; }
+.tl__e.is-current .tl__text { color:var(--ec-fg-96); border-left-color:var(--ec-fg-32); }
+.tl__restore { display:inline-flex; align-items:center; gap:4px; height:20px; margin-top:4px; padding:0 4px; margin-left:-4px; border-radius:2px; color:var(--ec-fg-48); }
+.tl__restore:hover { color:var(--ec-fg-96); background:var(--ec-fg-8); }
+.tl__restore .icon { width:12px; height:12px; }
+.empty-state--sm { padding:20px 8px; gap:4px; }
+.empty-state--sm .icon { width:16px; height:16px; }
+
 </style>
 </head>
 <body>
@@ -932,8 +953,13 @@ const windowScheme = row => `<div class="win"><div class="win__bar"><i></i><i></
 
 function inspectorTab(row, t, matches, pending, ig, moduleLocked) {
   if (S.tab === 'history') {
-    if (!t.history.length) return `<p class="muted">Перевод ещё не применялся.</p>`;
-    return [...t.history].reverse().map(h => `<div class="hist__e"><div class="hist__meta">${statusBadge(h.status)}<b>${esc(h.author)}</b><span class="spacer"></span><span>${new Date(h.date).toLocaleString('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span></div><div class="hist__text">${esc(h.text)}</div></div>`).join('');
+    if (!t.history.length) return `<div class="empty-state empty-state--sm">${icon('history')}<span>Перевод ещё не применялся</span></div>`;
+    const list = [...t.history].reverse();
+    const when = d => { const x = new Date(d), now = new Date(), sameYear = x.getFullYear() === now.getFullYear(); return x.toLocaleString('ru-RU', {day: 'numeric', month: 'short', ...(sameYear ? {} : {year: 'numeric'}), hour: '2-digit', minute: '2-digit'}); };
+    const verb = h => h.status === 'auto' ? 'предложил автоперевод' : h.status === 'outdated' ? 'перенёс как устаревший' : h.status === 'translated' ? 'применил перевод' : 'изменил строку';
+    return `<ol class="tl">${list.map((h, i) => `<li class="tl__e ${i === 0 ? 'is-current' : ''}"><span class="tl__dot status--${h.status}"></span>
+      <div class="tl__head">${avatar(h.author)}<span class="tl__who"><b>${esc(h.author)}</b> <span class="muted">${verb(h)}</span></span><time class="tl__when">${when(h.date)}</time></div>
+      <div class="tl__text">${esc(h.text) || '<i class="muted">пусто</i>'}</div>${i === 0 ? '' : `<button class="tl__restore" data-restore="${esc(h.text)}" title="Подставить этот вариант в поле перевода">${icon('history')}Вернуть этот вариант</button>`}</li>`).join('')}</ol>`;
   }
   if (S.tab === 'matches') {
     if (!matches.length) return `<p class="muted">Такого же текста в других местах нет.</p>`;
@@ -1228,6 +1254,7 @@ document.addEventListener('click', e => {
   if (d.app) { goApp(d.app); return; }
   if (d.group !== undefined) { S.openGroups.has(d.group) ? S.openGroups.delete(d.group) : S.openGroups.add(d.group); render(); return; }
   if (d.tab) { S.tab = d.tab; render(); return; }
+  if (d.restore !== undefined) { if (canEdit()) { updateDraft(d.restore); render(); $('#translation-input')?.focus(); } return; }
   if (d.goto) { const r = rows.find(x => x.id === d.goto); if (r) { S.app = r.app; S.selected = r.id; render(); $(`[data-row="${CSS.escape(r.id)}"]`)?.scrollIntoView({block: 'nearest'}); } return; }
   if (d.row) { S.selected = d.row; S.editorOpen = true; render(); $('#translation-input')?.focus(); return; }
   if (d.status) { S.status = S.status === d.status && d.status !== 'all' ? 'all' : d.status; S.showIgnored = S.status === 'ignored'; render(); return; }

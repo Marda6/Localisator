@@ -253,8 +253,13 @@ const windowScheme = row => `<div class="win"><div class="win__bar"><i></i><i></
 
 function inspectorTab(row, t, matches, pending, ig, moduleLocked) {
   if (S.tab === 'history') {
-    if (!t.history.length) return `<p class="muted">Перевод ещё не применялся.</p>`;
-    return [...t.history].reverse().map(h => `<div class="hist__e"><div class="hist__meta">${statusBadge(h.status)}<b>${esc(h.author)}</b><span class="spacer"></span><span>${new Date(h.date).toLocaleString('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span></div><div class="hist__text">${esc(h.text)}</div></div>`).join('');
+    if (!t.history.length) return `<div class="empty-state empty-state--sm">${icon('history')}<span>Перевод ещё не применялся</span></div>`;
+    const list = [...t.history].reverse();
+    const when = d => { const x = new Date(d), now = new Date(), sameYear = x.getFullYear() === now.getFullYear(); return x.toLocaleString('ru-RU', {day: 'numeric', month: 'short', ...(sameYear ? {} : {year: 'numeric'}), hour: '2-digit', minute: '2-digit'}); };
+    const verb = h => h.status === 'auto' ? 'предложил автоперевод' : h.status === 'outdated' ? 'перенёс как устаревший' : h.status === 'translated' ? 'применил перевод' : 'изменил строку';
+    return `<ol class="tl">${list.map((h, i) => `<li class="tl__e ${i === 0 ? 'is-current' : ''}"><span class="tl__dot status--${h.status}"></span>
+      <div class="tl__head">${avatar(h.author)}<span class="tl__who"><b>${esc(h.author)}</b> <span class="muted">${verb(h)}</span></span><time class="tl__when">${when(h.date)}</time></div>
+      <div class="tl__text">${esc(h.text) || '<i class="muted">пусто</i>'}</div>${i === 0 ? '' : `<button class="tl__restore" data-restore="${esc(h.text)}" title="Подставить этот вариант в поле перевода">${icon('history')}Вернуть этот вариант</button>`}</li>`).join('')}</ol>`;
   }
   if (S.tab === 'matches') {
     if (!matches.length) return `<p class="muted">Такого же текста в других местах нет.</p>`;
@@ -549,6 +554,7 @@ document.addEventListener('click', e => {
   if (d.app) { goApp(d.app); return; }
   if (d.group !== undefined) { S.openGroups.has(d.group) ? S.openGroups.delete(d.group) : S.openGroups.add(d.group); render(); return; }
   if (d.tab) { S.tab = d.tab; render(); return; }
+  if (d.restore !== undefined) { if (canEdit()) { updateDraft(d.restore); render(); $('#translation-input')?.focus(); } return; }
   if (d.goto) { const r = rows.find(x => x.id === d.goto); if (r) { S.app = r.app; S.selected = r.id; render(); $(`[data-row="${CSS.escape(r.id)}"]`)?.scrollIntoView({block: 'nearest'}); } return; }
   if (d.row) { S.selected = d.row; S.editorOpen = true; render(); $('#translation-input')?.focus(); return; }
   if (d.status) { S.status = S.status === d.status && d.status !== 'all' ? 'all' : d.status; S.showIgnored = S.status === 'ignored'; render(); return; }
