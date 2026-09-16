@@ -415,3 +415,24 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .panel__foot .tgl { color:var(--ec-fg-48); }
 @media (max-width:1280px) { .grid-head, .srow { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 112px; } }
 @media (max-width:760px) { .grid-head, .srow { grid-template-columns:minmax(0,1fr) 100px; } }
+
+/* ============================================= v2.2: ритм инспектора === */
+.insp__scroll { gap:0; padding:0 12px; }
+.insp__scroll > .sect, .insp__scroll > .acc { padding:12px 0; border-bottom:1px solid var(--divider); }
+.insp__scroll > :last-child { border-bottom:none; }
+.sect { gap:6px; }
+.sect__head { height:20px; }
+.acc { border-top:none; padding-top:12px; }
+.acc__head { margin:0 -4px; }
+.acc__body { padding-top:6px; gap:0; }
+.acc__body .irow { min-height:28px; }
+.checks { gap:0; }
+.check { min-height:24px; }
+.check.auto { color:var(--ec-fg-72); }
+.check.auto .icon { color:var(--st-auto); }
+.match { height:28px; }
+.hist__e { grid-template-columns:1fr; padding:4px 0; gap:2px; }
+.hist__meta { height:20px; }
+.hist__meta b { font-weight:500; }
+.hist__text { color:var(--ec-fg-64); }
+.suggest { margin-top:2px; }

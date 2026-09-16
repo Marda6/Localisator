@@ -120,5 +120,5 @@ export function initialTranslation(row,lang,version='18.0') {
   if(lang!=='ru' && row.index%4===0) status='untranslated';
   let text=status==='untranslated'?'':suggestion;
   if(lang==='ru' && status==='outdated') text=row.code==='Tool.SpindleSpeed'?'Скорость шпинделя':'Высота отвода';
-  return {text,status,history:text?[{text,status,author:status==='auto'?'Автоперевод · демо':'Анна Волкова',date:'2026-09-15T10:40:00.000Z'}]:[]};
+  return {text,status,history:text?[{text,status,author:status==='auto'?'Автоперевод':'Анна Волкова',date:'2026-09-15T10:40:00.000Z'}]:[]};
 }

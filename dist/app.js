@@ -232,23 +232,23 @@ function inspector() {
           <button class="ibtn" data-act="copy-source-to" title="Скопировать эталон в перевод" ${edit ? '' : 'disabled'}>${icon('arrow')}</button></div>
         <div class="editor"><textarea id="translation-input" rows="3" lang="${esc(S.lang)}" spellcheck="true" placeholder="${edit ? 'Перевод…' : ''}" ${edit ? '' : 'disabled'}>${esc(text)}</textarea></div>
         ${showSuggestion ? `<button class="suggest" data-act="suggest">${icon('sparkles')}<span class="suggest__text">${esc(suggestion)}</span><span class="suggest__cta">Вставить</span></button>` : ''}
-        ${t.status === 'auto' && !dirty ? `<div class="notice notice--blue">${icon('sparkles')}<span>Автоперевод. Проверьте и примените, иначе строка не попадёт в .lng.</span></div>` : ''}
         ${ig ? `<div class="notice">${icon('eyeOff')}<span>Строка не переводится${row.reason ? ': ' + esc(row.reason).toLowerCase() : ''}${moduleLocked ? ' (модуль исключён)' : ''}.</span></div>` : ''}
         ${!canEdit() ? `<div class="notice">${icon('lock')}<span>Язык доступен вашей компании только для чтения.</span></div>` : ''}
-        <div class="checks" id="validation-checks">${renderChecks(checks)}</div></div>
+        <div class="checks" id="validation-checks">${renderChecks(checks)}</div>${t.status === 'auto' && !dirty && !failed.length ? `<div class="check auto">${icon('sparkles')}<span>Автоперевод: подтвердите, чтобы строка попала в .lng</span></div>` : ''}</div>
 
       ${matches.length ? `<div class="sect"><div class="sect__head"><b>Такой же текст ещё в ${matches.length} ${plural(matches.length, 'месте', 'местах', 'местах')}</b><span class="muted">${pending.length ? `без перевода: ${pending.length}` : 'все переведены'}</span></div>
         ${matches.slice(0, 6).map(r => { const mt = translation(r); return `<div class="match"><span class="ellipsis" title="${esc(r.id)}">${esc(appById(r.app)?.name || r.app)} <span class="muted">· ${esc(r.code)}</span></span>${statusBadge(mt.status)}</div>`; }).join('')}${matches.length > 6 ? `<div class="muted">и ещё ${matches.length - 6}</div>` : ''}</div>` : ''}
 
-      <details class="acc" ${S.detailsOpen ? 'open' : ''} id="details"><summary class="acc__head">${icon('right')}<b>Подробности</b><span class="muted">ключ, модуль, ответственный, история</span></summary>
+      <details class="acc" ${S.detailsOpen ? 'open' : ''} id="details"><summary class="acc__head">${icon('right')}<b>Подробности</b><span class="muted">ключ, модуль, ответственный</span></summary>
         <div class="acc__body">
           <div class="irow"><span class="irow__label">Ключ</span><span class="irow__val"><code class="ellipsis">${esc(row.id)}</code><button class="ibtn" data-act="copy-key" title="Скопировать ключ">${icon('copy')}</button></span></div>
           <div class="irow"><span class="irow__label">Модуль</span><span class="irow__val"><span class="ellipsis">${esc(MODULES[row.module]?.label || row.module)}</span></span></div>
           <div class="irow"><span class="irow__label">Ответственный</span><span class="irow__val">${avatar(row.owner)}<span class="ellipsis">${esc(row.owner)}</span>${row.owner === ME ? '<span class="tag tag--green">вы</span>' : ''}</span></div>
           <div class="irow"><span class="irow__label">Ignored</span><span class="irow__val"><label class="tgl"><input type="checkbox" id="ignore-toggle" ${ig ? 'checked' : ''} ${!isAdmin() || moduleLocked ? 'disabled' : ''}><span class="tgl__track"></span><span>${moduleLocked ? 'модуль исключён' : ig ? 'не переводить' : 'переводить'}</span></label></span></div>
           <div class="irow"><span class="irow__label">Где в окне</span><span class="irow__val"><button class="btn btn--ghost" data-act="context">${icon('window')}Схема окна</button></span></div>
-          ${t.history.length ? `<div class="irow irow--top"><span class="irow__label">История</span><span class="irow__val"><div class="hist">${[...t.history].reverse().slice(0, 4).map(h => `<div class="hist__e"><div class="hist__meta"><b>${esc(h.author)}</b><span>${new Date(h.date).toLocaleString('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>${statusBadge(h.status)}</div><div class="hist__text">${esc(h.text)}</div></div>`).join('')}</div></span></div>` : ''}
         </div></details>
+      ${t.history.length ? `<div class="sect sect--history"><div class="sect__head"><b>История</b><span class="muted">${t.history.length}</span></div>
+        ${[...t.history].reverse().slice(0, 5).map(h => `<div class="hist__e"><div class="hist__meta">${statusBadge(h.status)}<b>${esc(h.author)}</b><span class="spacer"></span><span>${new Date(h.date).toLocaleString('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span></div><div class="hist__text">${esc(h.text)}</div></div>`).join('')}</div>` : ''}
     </div>
     <div class="insp__foot">${ig
       ? `<button class="btn btn--wide" data-act="ignore" ${!isAdmin() || moduleLocked ? 'disabled' : ''}>Вернуть в перевод</button>`
