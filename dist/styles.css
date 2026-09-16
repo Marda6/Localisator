@@ -670,3 +670,17 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .lcard__foot { display:flex; align-items:center; gap:6px; height:20px; margin-top:-2px; }
 .lcard__foot .muted { flex:1; font-size:11px; }
 @media (max-width:1024px) { .progress { grid-template-columns:1fr; } .panel--langs { max-height:280px; } }
+
+/* ============================================= v2.17: группы в карте сворачиваются === */
+.heat__group { cursor:pointer; user-select:none; }
+.heat__group td { height:36px; padding-top:0; background:var(--ec-fg-4); border-bottom:1px solid var(--divider); border-top:1px solid var(--divider); }
+.heat__group:hover td { background:var(--ec-fg-6) !important; }
+.heat__group td.is-cur { background:var(--ec-fg-6); }
+.heat__gname { display:inline-flex; align-items:center; gap:6px; }
+.heat__gname .icon { color:var(--ec-fg-48); transition:transform .12s; }
+.heat__group.is-open .heat__gname .icon { transform:rotate(90deg); }
+.heat__gname b { font-weight:600; color:var(--ec-fg-96); }
+.heat__gname .muted { margin-left:2px; }
+.heat__cell--sum { opacity:.85; outline:1px dashed var(--ec-fg-16); outline-offset:-1px; }
+.heat__group.is-open .heat__cell--sum { opacity:.55; }
+.table.heat tbody tr:first-child td { border-top:none; }

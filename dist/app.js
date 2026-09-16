@@ -68,7 +68,7 @@ const PAGES = ['translations', 'progress', 'admin', 'guide'];
 const S = {
   page: 'translations', app: 'CAM', lang: 'ru', version: '18.0',
   status: 'all', module: 'all', query: '', mine: false, showIgnored: false,
-  selected: 'CAM.Toolpath.Calculate', tab: 'context', winOpen: false, progressSort: 'group', matchSel: new Set(), matchSelFor: null,
+  selected: 'CAM.Toolpath.Calculate', tab: 'context', winOpen: false, progressSort: 'group', progressClosed: new Set(), matchSel: new Set(), matchSelFor: null,
   role: 'admin', dealer: 'dealer-a',
   openGroups: new Set(['ENCY']), editorOpen: false
 };
@@ -313,7 +313,7 @@ function progressPage() {
           const cell = (a, l) => { const st = getStats(rows.filter(r => r.app === a.id), l.code); const h = st.percent / 100; return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><button class="heat__cell ${st.percent === 100 ? 'is-done' : ''}" style="--h:${h}" data-progress-app="${esc(a.id)}" data-progress-lang="${esc(l.code)}" title="${esc(a.name)} · ${esc(l.name)}: переведено ${st.translated}, устарело ${st.outdated}, авто ${st.auto}, без перевода ${st.untranslated}"><b>${st.percent}%</b>${st.untranslated ? `<small>${st.untranslated}</small>` : ''}</button></td>`; };
           const rowHtml = a => `<tr><td><span class="cell-app">${esc(a.name)}<small>${esc(a.id)}</small></span></td><td class="num muted">${fmt(getStats(rows.filter(r => r.app === a.id)).total)}</td>${db.languages.map(l => cell(a, l)).join('')}</tr>`;
           if (S.progressSort === 'worst') return [...db.apps].sort((x, y) => getStats(rows.filter(r => r.app === x.id)).percent - getStats(rows.filter(r => r.app === y.id)).percent).map(rowHtml).join('');
-          return GROUPS.map(g => { const apps = db.apps.filter(x => x.group === g); if (!apps.length) return ''; const gst = getStats(rows.filter(r => apps.some(x => x.id === r.app))); return `<tr class="heat__group"><td colspan="2"><b>${esc(g)}</b><span class="muted"> · ${apps.length}</span></td>${db.languages.map(l => { const st = getStats(rows.filter(r => apps.some(x => x.id === r.app)), l.code); return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><span class="muted">${st.percent}%</span></td>`; }).join('')}</tr>` + apps.map(rowHtml).join(''); }).join('');
+          return GROUPS.map(g => { const apps = db.apps.filter(x => x.group === g); if (!apps.length) return ''; const open = !S.progressClosed.has(g); const grows = rows.filter(r => apps.some(x => x.id === r.app)); return `<tr class="heat__group ${open ? 'is-open' : ''}" data-pgroup="${esc(g)}"><td><span class="heat__gname">${icon('right')}<b>${esc(g)}</b><span class="muted">${apps.length} ${plural(apps.length, 'приложение', 'приложения', 'приложений')}</span></span></td><td class="num muted">${fmt(getStats(grows).total)}</td>${db.languages.map(l => { const st = getStats(grows, l.code); return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><span class="heat__cell heat__cell--sum" style="--h:${st.percent / 100}" title="${esc(g)} · ${esc(l.name)}: без перевода ${st.untranslated}"><b>${st.percent}%</b>${st.untranslated ? `<small>${st.untranslated}</small>` : ''}</span></td>`; }).join('')}</tr>` + (open ? apps.map(rowHtml).join('') : ''); }).join('');
         })()}
       </tbody></table></div>
       <div class="panel__foot"><span class="muted">В ячейке: процент Translated и мелко — сколько строк без перевода. Ignored исключены. Клик открывает строки приложения на этом языке.</span></div></section>
@@ -572,7 +572,7 @@ function action(name) {
 
 /* ---------------------------------------------------------------- events */
 document.addEventListener('click', e => {
-  const t = e.target.closest('button, a.brand, .tree__group, .lcard'); if (!t || t.disabled) return;
+  const t = e.target.closest('button, a.brand, .tree__group, .lcard, .heat__group'); if (!t || t.disabled) return;
   const d = t.dataset;
   if (d.act) { action(d.act); return; }
   if (d.page) { S.page = d.page; location.hash = d.page; render(); return; }
@@ -580,6 +580,7 @@ document.addEventListener('click', e => {
   if (d.group !== undefined) { S.openGroups.has(d.group) ? S.openGroups.delete(d.group) : S.openGroups.add(d.group); render(); return; }
   if (d.tab) { S.tab = d.tab; render(); return; }
   if (d.psort) { S.progressSort = d.psort; render(); return; }
+  if (d.pgroup !== undefined) { S.progressClosed.has(d.pgroup) ? S.progressClosed.delete(d.pgroup) : S.progressClosed.add(d.pgroup); render(); return; }
   if (d.restore !== undefined) { if (canEdit()) { updateDraft(d.restore); render(); $('#translation-input')?.focus(); } return; }
   if (d.goto) { const r = rows.find(x => x.id === d.goto); if (r) { S.app = r.app; S.selected = r.id; render(); $(`[data-row="${CSS.escape(r.id)}"]`)?.scrollIntoView({block: 'nearest'}); } return; }
   if (d.row) { S.selected = d.row; S.editorOpen = true; render(); $('#translation-input')?.focus(); return; }
