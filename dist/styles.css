@@ -646,3 +646,27 @@ dialog::backdrop { background:var(--ec-bg-80); }
 :root[data-theme="light"] .heat__cell.is-done { color:#ffffff; }
 .table.heat th:first-child, .table.heat td:first-child { width:34%; }
 .table.heat th.num:nth-child(2), .table.heat td.num:nth-child(2) { width:64px; }
+
+/* ============================================= v2.16: прогресс — языки слева, карта справа === */
+.progress { display:grid; grid-template-columns:300px minmax(0,1fr); gap:8px; flex:1; min-height:0; }
+.progress > .panel { min-height:0; }
+.langlist { padding:6px; display:flex; flex-direction:column; gap:6px; }
+.lcard { display:flex; flex-direction:column; gap:8px; padding:10px 10px 8px; border-radius:var(--ec-radius-md); background:var(--ec-fg-4); border:1px solid transparent; cursor:pointer; transition:background .12s,border-color .12s; }
+.lcard:hover { background:var(--ec-fg-6); }
+.lcard.is-selected { background:var(--ec-fg-8); border-color:var(--ec-green); }
+.lcard:focus-visible { outline:1px solid var(--ec-fg-24); }
+.lcard__head { display:flex; align-items:center; gap:8px; }
+.lcard__t { flex:1; min-width:0; }
+.lcard__pct { font-size:18px; line-height:20px; font-weight:600; font-variant-numeric:tabular-nums; }
+.lcard__pct small { font-size:11px; color:var(--ec-fg-48); font-weight:400; margin-left:1px; }
+.lcard .bar { height:5px; }
+.lcard__legend { display:flex; gap:10px; font-size:11px; color:var(--ec-fg-72); font-variant-numeric:tabular-nums; }
+.lcard__legend span { display:inline-flex; align-items:center; gap:4px; }
+.lcard__legend .dot { width:7px; height:7px; border-radius:999px; background:var(--dot); }
+.lcard:not(.is-selected):not(:hover) .bar .b-translated { background:var(--ec-fg-48); }
+.lcard:not(.is-selected):not(:hover) .bar .b-outdated { background:var(--ec-fg-24); }
+.lcard:not(.is-selected):not(:hover) .bar .b-auto { background:var(--ec-fg-16); opacity:1; }
+.lcard:not(.is-selected):not(:hover) .lcard__legend .dot { background:var(--ec-fg-24); }
+.lcard__foot { display:flex; align-items:center; gap:6px; height:20px; margin-top:-2px; }
+.lcard__foot .muted { flex:1; font-size:11px; }
+@media (max-width:1024px) { .progress { grid-template-columns:1fr; } .panel--langs { max-height:280px; } }

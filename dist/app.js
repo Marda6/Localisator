@@ -297,11 +297,13 @@ function translationsPage() {
 
 /* ---------------------------------------------------------- progress page */
 function progressPage() {
-  return `<div class="workspace"><div class="page">
-    <div class="cards">${db.languages.map(l => { const st = getStats(rows, l.code); const editors = db.dealers.filter(d => d.languages.includes(l.code)); return `<button class="card" data-open-lang="${esc(l.code)}">
-      <div class="card__head"><span class="card__tag">${esc(l.tag)}</span><div><div class="card__title">${esc(l.name)}</div><div class="card__sub">${esc(l.native)} · ${editors.length ? editors.map(d => esc(d.name)).join(', ') : 'переводчики не назначены'}</div></div></div>
-      <div class="card__big">${st.percent}<small>%</small></div>${bar(st)}
-      <div class="card__legend"><span><b>${fmt(st.translated)}</b> переведено</span><span><b>${fmt(st.outdated)}</b> устарело</span><span><b>${fmt(st.auto)}</b> авто</span><span><b>${fmt(st.untranslated)}</b> без перевода</span></div></button>`; }).join('')}</div>
+  return `<div class="workspace"><div class="progress">
+    <aside class="panel panel--langs"><div class="panel__head"><span class="panel__title">Языки<span class="panel__count">${db.languages.length}</span></span><span class="spacer"></span>${isAdmin() ? `<button class="ibtn" data-act="add-language" title="Добавить язык">${icon('plus')}</button>` : ''}</div>
+      <div class="panel__body langlist">${db.languages.map(l => { const st = getStats(rows, l.code); const editors = db.dealers.filter(d => d.languages.includes(l.code)); return `<div class="lcard ${l.code === S.lang ? 'is-selected' : ''}" data-lang="${esc(l.code)}" role="button" tabindex="0">
+        <div class="lcard__head"><span class="card__tag">${esc(l.tag)}</span><div class="lcard__t"><div class="card__title">${esc(l.name)}</div><div class="card__sub">${esc(l.native)}</div></div><span class="lcard__pct">${st.percent}<small>%</small></span></div>
+        ${bar(st)}
+        <div class="lcard__legend"><span title="Переведено"><i class="dot" style="--dot:var(--st-translated)"></i>${fmt(st.translated)}</span><span title="Устарело"><i class="dot" style="--dot:var(--st-outdated)"></i>${fmt(st.outdated)}</span><span title="Автоперевод"><i class="dot" style="--dot:var(--st-auto)"></i>${fmt(st.auto)}</span><span title="Без перевода"><i class="dot" style="--dot:var(--st-untranslated)"></i>${fmt(st.untranslated)}</span></div>
+        <div class="lcard__foot"><span class="muted ellipsis">${editors.length ? editors.map(d => esc(d.name)).join(', ') : 'переводчики не назначены'}</span><button class="ibtn" data-open-lang="${esc(l.code)}" title="Открыть строки на этом языке">${icon('arrow')}</button></div></div>`; }).join('')}</div></aside>
     <section class="panel"><div class="panel__head"><span class="panel__title">Готовность по приложениям<span class="panel__count">ENCY ${esc(S.version)}</span></span>
         <span class="spacer"></span>
         <span class="muted">Сортировка</span><div class="seg seg--sm"><button class="${S.progressSort === 'group' ? 'is-active' : ''}" data-psort="group">По группам</button><button class="${S.progressSort === 'worst' ? 'is-active' : ''}" data-psort="worst">Сначала отстающие</button></div>
@@ -570,7 +572,7 @@ function action(name) {
 
 /* ---------------------------------------------------------------- events */
 document.addEventListener('click', e => {
-  const t = e.target.closest('button, a.brand, .tree__group'); if (!t || t.disabled) return;
+  const t = e.target.closest('button, a.brand, .tree__group, .lcard'); if (!t || t.disabled) return;
   const d = t.dataset;
   if (d.act) { action(d.act); return; }
   if (d.page) { S.page = d.page; location.hash = d.page; render(); return; }
@@ -583,6 +585,7 @@ document.addEventListener('click', e => {
   if (d.row) { S.selected = d.row; S.editorOpen = true; render(); $('#translation-input')?.focus(); return; }
   if (d.status) { S.status = S.status === d.status && d.status !== 'all' ? 'all' : d.status; S.showIgnored = S.status === 'ignored'; render(); return; }
   if (d.openLang) { goApp('all', d.openLang); return; }
+  if (d.lang !== undefined && !e.target.closest('[data-open-lang]')) { S.lang = d.lang; render(); return; }
   if (d.progressApp) { goApp(d.progressApp, d.progressLang); return; }
 });
 document.addEventListener('input', e => {

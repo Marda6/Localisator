@@ -650,6 +650,32 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .heat__cell.is-done small { display:none; }
 :root[data-theme="light"] .heat__cell { color:var(--ec-fg-96); }
 :root[data-theme="light"] .heat__cell.is-done { color:#ffffff; }
+.table.heat th:first-child, .table.heat td:first-child { width:34%; }
+.table.heat th.num:nth-child(2), .table.heat td.num:nth-child(2) { width:64px; }
+
+/* ============================================= v2.16: прогресс — языки слева, карта справа === */
+.progress { display:grid; grid-template-columns:300px minmax(0,1fr); gap:8px; flex:1; min-height:0; }
+.progress > .panel { min-height:0; }
+.langlist { padding:6px; display:flex; flex-direction:column; gap:6px; }
+.lcard { display:flex; flex-direction:column; gap:8px; padding:10px 10px 8px; border-radius:var(--ec-radius-md); background:var(--ec-fg-4); border:1px solid transparent; cursor:pointer; transition:background .12s,border-color .12s; }
+.lcard:hover { background:var(--ec-fg-6); }
+.lcard.is-selected { background:var(--ec-fg-8); border-color:var(--ec-green); }
+.lcard:focus-visible { outline:1px solid var(--ec-fg-24); }
+.lcard__head { display:flex; align-items:center; gap:8px; }
+.lcard__t { flex:1; min-width:0; }
+.lcard__pct { font-size:18px; line-height:20px; font-weight:600; font-variant-numeric:tabular-nums; }
+.lcard__pct small { font-size:11px; color:var(--ec-fg-48); font-weight:400; margin-left:1px; }
+.lcard .bar { height:5px; }
+.lcard__legend { display:flex; gap:10px; font-size:11px; color:var(--ec-fg-72); font-variant-numeric:tabular-nums; }
+.lcard__legend span { display:inline-flex; align-items:center; gap:4px; }
+.lcard__legend .dot { width:7px; height:7px; border-radius:999px; background:var(--dot); }
+.lcard:not(.is-selected):not(:hover) .bar .b-translated { background:var(--ec-fg-48); }
+.lcard:not(.is-selected):not(:hover) .bar .b-outdated { background:var(--ec-fg-24); }
+.lcard:not(.is-selected):not(:hover) .bar .b-auto { background:var(--ec-fg-16); opacity:1; }
+.lcard:not(.is-selected):not(:hover) .lcard__legend .dot { background:var(--ec-fg-24); }
+.lcard__foot { display:flex; align-items:center; gap:6px; height:20px; margin-top:-2px; }
+.lcard__foot .muted { flex:1; font-size:11px; }
+@media (max-width:1024px) { .progress { grid-template-columns:1fr; } .panel--langs { max-height:280px; } }
 
 </style>
 </head>
@@ -1122,11 +1148,13 @@ function translationsPage() {
 
 /* ---------------------------------------------------------- progress page */
 function progressPage() {
-  return `<div class="workspace"><div class="page">
-    <div class="cards">${db.languages.map(l => { const st = getStats(rows, l.code); const editors = db.dealers.filter(d => d.languages.includes(l.code)); return `<button class="card" data-open-lang="${esc(l.code)}">
-      <div class="card__head"><span class="card__tag">${esc(l.tag)}</span><div><div class="card__title">${esc(l.name)}</div><div class="card__sub">${esc(l.native)} · ${editors.length ? editors.map(d => esc(d.name)).join(', ') : 'переводчики не назначены'}</div></div></div>
-      <div class="card__big">${st.percent}<small>%</small></div>${bar(st)}
-      <div class="card__legend"><span><b>${fmt(st.translated)}</b> переведено</span><span><b>${fmt(st.outdated)}</b> устарело</span><span><b>${fmt(st.auto)}</b> авто</span><span><b>${fmt(st.untranslated)}</b> без перевода</span></div></button>`; }).join('')}</div>
+  return `<div class="workspace"><div class="progress">
+    <aside class="panel panel--langs"><div class="panel__head"><span class="panel__title">Языки<span class="panel__count">${db.languages.length}</span></span><span class="spacer"></span>${isAdmin() ? `<button class="ibtn" data-act="add-language" title="Добавить язык">${icon('plus')}</button>` : ''}</div>
+      <div class="panel__body langlist">${db.languages.map(l => { const st = getStats(rows, l.code); const editors = db.dealers.filter(d => d.languages.includes(l.code)); return `<div class="lcard ${l.code === S.lang ? 'is-selected' : ''}" data-lang="${esc(l.code)}" role="button" tabindex="0">
+        <div class="lcard__head"><span class="card__tag">${esc(l.tag)}</span><div class="lcard__t"><div class="card__title">${esc(l.name)}</div><div class="card__sub">${esc(l.native)}</div></div><span class="lcard__pct">${st.percent}<small>%</small></span></div>
+        ${bar(st)}
+        <div class="lcard__legend"><span title="Переведено"><i class="dot" style="--dot:var(--st-translated)"></i>${fmt(st.translated)}</span><span title="Устарело"><i class="dot" style="--dot:var(--st-outdated)"></i>${fmt(st.outdated)}</span><span title="Автоперевод"><i class="dot" style="--dot:var(--st-auto)"></i>${fmt(st.auto)}</span><span title="Без перевода"><i class="dot" style="--dot:var(--st-untranslated)"></i>${fmt(st.untranslated)}</span></div>
+        <div class="lcard__foot"><span class="muted ellipsis">${editors.length ? editors.map(d => esc(d.name)).join(', ') : 'переводчики не назначены'}</span><button class="ibtn" data-open-lang="${esc(l.code)}" title="Открыть строки на этом языке">${icon('arrow')}</button></div></div>`; }).join('')}</div></aside>
     <section class="panel"><div class="panel__head"><span class="panel__title">Готовность по приложениям<span class="panel__count">ENCY ${esc(S.version)}</span></span>
         <span class="spacer"></span>
         <span class="muted">Сортировка</span><div class="seg seg--sm"><button class="${S.progressSort === 'group' ? 'is-active' : ''}" data-psort="group">По группам</button><button class="${S.progressSort === 'worst' ? 'is-active' : ''}" data-psort="worst">Сначала отстающие</button></div>
@@ -1395,7 +1423,7 @@ function action(name) {
 
 /* ---------------------------------------------------------------- events */
 document.addEventListener('click', e => {
-  const t = e.target.closest('button, a.brand, .tree__group'); if (!t || t.disabled) return;
+  const t = e.target.closest('button, a.brand, .tree__group, .lcard'); if (!t || t.disabled) return;
   const d = t.dataset;
   if (d.act) { action(d.act); return; }
   if (d.page) { S.page = d.page; location.hash = d.page; render(); return; }
@@ -1408,6 +1436,7 @@ document.addEventListener('click', e => {
   if (d.row) { S.selected = d.row; S.editorOpen = true; render(); $('#translation-input')?.focus(); return; }
   if (d.status) { S.status = S.status === d.status && d.status !== 'all' ? 'all' : d.status; S.showIgnored = S.status === 'ignored'; render(); return; }
   if (d.openLang) { goApp('all', d.openLang); return; }
+  if (d.lang !== undefined && !e.target.closest('[data-open-lang]')) { S.lang = d.lang; render(); return; }
   if (d.progressApp) { goApp(d.progressApp, d.progressLang); return; }
 });
 document.addEventListener('input', e => {
