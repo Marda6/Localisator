@@ -462,3 +462,12 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .mcard__text { color:var(--ec-fg-64); height:18px; line-height:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mcard__text.is-empty { color:var(--ec-fg-32); font-style:italic; }
 .mcard .status { padding-right:0; }
+
+/* v2.4.1: в карточке совпадения сначала перевод, ниже — где это */
+.mcard__text { color:var(--ec-fg-96); }
+.mcard__text.is-empty { color:var(--ec-fg-40, var(--ec-fg-48)); }
+.mcard__where { color:var(--ec-fg-48); gap:6px; }
+.mcard__where b { display:none; }
+.mcard__where i { width:1px; height:10px; background:var(--ec-fg-16); flex-shrink:0; }
+.mcard__where span { overflow:hidden; text-overflow:ellipsis; }
+.mcard__body:hover .mcard__text { text-decoration:underline; text-decoration-color:var(--ec-fg-24); }
