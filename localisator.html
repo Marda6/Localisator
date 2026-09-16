@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0e1010">
+  <meta name="description" content="Прототип локализатора ENCY и Tuner на дизайн-системе ENCY Core: переводы, проверки, прогресс и доступ дилеров.">
+  <title>ENCY Localizer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%230e1010'/%3E%3Cpath d='M10 12h20M10 20h14M10 28h20' stroke='%2300a36d' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+/* ============================================================================
+   ENCY Localizer — стили на токенах ENCY Core.
+   Источник токенов: Figma «Core» + веб-прототип Setup Sheet v2 (styles.css).
+   Никаких магических значений: цвета — только переменные, сетка кратна 2px.
+   ========================================================================= */
+
+
+:root {
+  --ec-bg:#0e1010; --ec-bg-80:rgba(14,16,16,.80); --ec-bg-96:rgba(14,16,16,.96);
+  --ec-rail:#121415; --ec-card:#16191a; --ec-card-2:#1b1f20; --ec-popover:#1e2223;
+  --ec-fg-100:#f5f5f5; --ec-fg-96:rgba(245,245,245,.96); --ec-fg-80:rgba(245,245,245,.80);
+  --ec-fg-72:rgba(245,245,245,.72); --ec-fg-64:rgba(245,245,245,.64); --ec-fg-56:rgba(245,245,245,.56);
+  --ec-fg-48:rgba(245,245,245,.48); --ec-fg-32:rgba(245,245,245,.32); --ec-fg-24:rgba(245,245,245,.24);
+  --ec-fg-16:rgba(245,245,245,.16); --ec-fg-12:rgba(245,245,245,.12); --ec-fg-8:rgba(245,245,245,.08);
+  --ec-fg-6:rgba(245,245,245,.06); --ec-fg-4:rgba(245,245,245,.04);
+  --ec-green:#00a36d; --ec-green-08:rgba(0,163,109,.08); --ec-green-16:rgba(0,163,109,.16);
+  --ec-badge:#00cf8a; --ec-amber:#ebc14a; --ec-ink:#04150e;
+  --op-yellow:#ebda84; --op-blue:#84c9eb; --op-coral:#ff7072; --op-green:#84ebb8; --op-violet:#9584eb;
+  --ec-font:'Inter',system-ui,-apple-system,sans-serif;
+  --ec-radius:4px; --ec-radius-md:8px; --ec-radius-lg:12px;
+  --divider:var(--ec-fg-8); --border:var(--ec-fg-16);
+  --ec-shadow:0 12px 40px rgba(0,0,0,.5);
+  /* статусы строк локализатора (маппинг на палитру системы) */
+  --st-translated:var(--ec-green); --st-outdated:var(--ec-amber); --st-auto:var(--op-blue); --st-untranslated:var(--ec-fg-32); --st-error:var(--op-coral);
+}
+:root[data-theme="light"] {
+  --ec-bg:#e9ebec; --ec-bg-80:rgba(252,253,253,.85); --ec-bg-96:rgba(252,253,253,.96);
+  --ec-rail:#f4f5f6; --ec-card:#fbfcfc; --ec-card-2:#eef0f1; --ec-popover:#ffffff;
+  --ec-fg-100:#16191b; --ec-fg-96:rgba(22,25,27,.96); --ec-fg-80:rgba(22,25,27,.82);
+  --ec-fg-72:rgba(22,25,27,.74); --ec-fg-64:rgba(22,25,27,.66); --ec-fg-56:rgba(22,25,27,.58);
+  --ec-fg-48:rgba(22,25,27,.5); --ec-fg-32:rgba(22,25,27,.36); --ec-fg-24:rgba(22,25,27,.28);
+  --ec-fg-16:rgba(22,25,27,.2); --ec-fg-12:rgba(22,25,27,.14); --ec-fg-8:rgba(22,25,27,.09);
+  --ec-fg-6:rgba(22,25,27,.07); --ec-fg-4:rgba(22,25,27,.05);
+  --ec-badge:var(--ec-green); --ec-shadow:0 12px 32px rgba(20,26,30,.2);
+  --st-auto:#3a8fbf;
+}
+:root[data-theme="light"] .header, :root[data-theme="light"] .panel { background:var(--ec-card); }
+
+/* ================================================================== BASE === */
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body { font-family:var(--ec-font); font-size:12px; line-height:16px; color:var(--ec-fg-100);
+  background:var(--ec-bg); -webkit-font-smoothing:antialiased; overflow:hidden; }
+button { font-family:inherit; font-size:inherit; line-height:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+button:disabled { cursor:default; opacity:.45; }
+input, select, textarea { font-family:inherit; font-size:inherit; line-height:inherit; color:inherit; }
+svg { display:block; }
+code, kbd { font-family:ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size:11px; }
+[hidden] { display:none !important; }
+::-webkit-scrollbar { width:8px; height:8px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--ec-fg-12); border-radius:999px; border:2px solid transparent; background-clip:content-box; }
+::-webkit-scrollbar-thumb:hover { background:var(--ec-fg-24); background-clip:content-box; }
+.icon { width:16px; height:16px; flex-shrink:0; }
+.icon.i20 { width:20px; height:20px; }
+.muted { color:var(--ec-fg-48); }
+.mono { font-family:ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size:11px; }
+.nowrap { white-space:nowrap; }
+.ellipsis { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.spacer { flex:1; }
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+/* ============================================================== SKELETON === */
+.app { height:100vh; height:100dvh; display:flex; flex-direction:column; }
+.header { height:48px; flex-shrink:0; display:flex; align-items:center; gap:8px; padding:0 12px;
+  background:var(--ec-rail); border-bottom:1px solid var(--divider); }
+.brand { display:flex; align-items:center; gap:6px; margin-right:8px; white-space:nowrap; color:inherit; text-decoration:none; }
+.brand__mark { width:20px; height:20px; border-radius:var(--ec-radius); background:var(--ec-green); display:grid; place-items:center; color:var(--ec-ink); }
+.brand__mark .icon { width:14px; height:14px; }
+.brand__name { font-size:13px; font-weight:600; }
+.brand__name small { font-weight:400; color:var(--ec-fg-48); margin-left:4px; }
+.header__sep { width:1px; height:16px; background:var(--ec-fg-12); flex-shrink:0; }
+.workspace { display:flex; flex-direction:column; min-height:0; flex:1; padding:8px; gap:8px; }
+.workspace--rows { display:grid; grid-template-columns:232px minmax(0,1fr) 380px; gap:8px; }
+.page { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:8px; padding:0 0 8px; }
+.page--narrow { max-width:1120px; }
+
+/* Mode tabs (24:326) — навигация по разделам */
+.tabs { display:flex; gap:2px; padding:2px; border-radius:var(--ec-radius-md); background:var(--ec-fg-4); }
+.tabs__seg { display:flex; align-items:center; gap:4px; height:24px; padding:0 10px; border-radius:6px; color:var(--ec-fg-72); white-space:nowrap; transition:background .12s,color .12s; }
+.tabs__seg:hover { color:var(--ec-fg-96); background:var(--ec-fg-6); }
+.tabs__seg.is-active { background:var(--ec-bg-96); color:var(--ec-fg-100); font-weight:600; }
+.tabs__seg .icon { color:var(--ec-fg-64); }
+.tabs__seg.is-active .icon { color:var(--ec-fg-96); }
+
+/* Панель (.panel из v2) */
+.panel { display:flex; flex-direction:column; min-height:0; min-width:0; background:var(--ec-card-2);
+  border:1px solid var(--border); border-radius:var(--ec-radius-md); overflow:hidden; }
+.panel__head { height:36px; flex-shrink:0; display:flex; align-items:center; gap:6px; padding:0 8px 0 12px; border-bottom:1px solid var(--divider); }
+.panel__title { font-size:12px; font-weight:600; color:var(--ec-fg-100); white-space:nowrap; }
+.panel__count { color:var(--ec-fg-48); font-weight:400; margin-left:2px; }
+.panel__body { flex:1; min-height:0; overflow:auto; }
+.panel__foot { flex-shrink:0; display:flex; align-items:center; gap:8px; height:28px; padding:0 12px; border-top:1px solid var(--divider); color:var(--ec-fg-48); }
+.panel--static { flex:none; }
+.panel--static .panel__body { overflow:visible; padding:8px 12px 12px; }
+
+/* ============================================================== CONTROLS === */
+/* Button_24 (24:383) */
+.btn { display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:var(--ec-radius);
+  background:var(--ec-fg-4); color:var(--ec-fg-72); white-space:nowrap; border:1px solid transparent; transition:background .12s,color .12s; }
+.btn:hover:not(:disabled) { background:var(--ec-fg-12); color:var(--ec-fg-96); }
+.btn.is-selected { background:var(--ec-green-08); border-color:var(--ec-green); color:var(--ec-fg-96); }
+.btn--primary { background:var(--ec-green); color:var(--ec-ink); font-weight:600; }
+.btn--primary:hover:not(:disabled) { background:var(--ec-badge); color:var(--ec-ink); }
+.btn--secondary { background:var(--ec-fg-12); color:var(--ec-fg-96); }
+.btn--secondary:hover:not(:disabled) { background:var(--ec-fg-16); }
+.btn--ghost { background:transparent; }
+.btn--wide { width:100%; justify-content:center; }
+.btn kbd { margin-left:4px; color:inherit; opacity:.6; font-size:10px; }
+/* button_icn_20 (3:36) */
+.ibtn { display:grid; place-items:center; width:20px; height:20px; border-radius:var(--ec-radius); color:var(--ec-fg-64); transition:background .12s,color .12s; }
+.ibtn:hover:not(:disabled) { background:var(--ec-fg-12); color:var(--ec-fg-96); }
+.ibtn:active:not(:disabled), .ibtn.is-pressed { background:var(--ec-fg-16); color:var(--ec-fg-100); }
+.ibtn--24 { width:24px; height:24px; }
+/* field (input_h20 → веб-высота 24) */
+.field { display:flex; align-items:center; gap:6px; height:24px; padding:0 6px; border-radius:var(--ec-radius);
+  background:var(--ec-fg-4); border:1px solid transparent; color:var(--ec-fg-72); transition:background .12s,border-color .12s; }
+.field:hover { background:var(--ec-fg-6); }
+.field:focus-within { background:var(--ec-fg-6); border-color:var(--ec-fg-16); color:var(--ec-fg-96); }
+.field input, .field select { flex:1; min-width:0; background:none; border:none; outline:none; color:var(--ec-fg-96); height:22px; }
+.field input::placeholder { color:var(--ec-fg-48); }
+.field .icon { color:var(--ec-fg-48); }
+.field kbd { padding:0 4px; border:1px solid var(--ec-fg-12); border-radius:2px; color:var(--ec-fg-48); font-size:10px; line-height:14px; }
+.field--search { width:260px; }
+/* dropdown_h20 → нативный select в обёртке */
+.dd { position:relative; display:inline-flex; align-items:center; height:24px; border-radius:var(--ec-radius); background:var(--ec-fg-4); border:1px solid transparent; color:var(--ec-fg-72); transition:background .12s,border-color .12s; }
+.dd:hover { background:var(--ec-fg-8); color:var(--ec-fg-96); }
+.dd:focus-within { border-color:var(--ec-fg-16); }
+.dd select { appearance:none; -webkit-appearance:none; background:none; border:none; outline:none; height:22px; padding:0 22px 0 8px; color:inherit; cursor:pointer; max-width:260px; }
+.dd select option, .dd select optgroup { background:var(--ec-popover); color:var(--ec-fg-100); }
+.dd .icon { position:absolute; right:4px; pointer-events:none; color:var(--ec-fg-48); }
+.dd__label { padding-left:8px; color:var(--ec-fg-48); white-space:nowrap; }
+.dd__label + select { padding-left:4px; }
+/* фильтр-чип (.fchip из v2) */
+.fchip { display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:var(--ec-radius);
+  border:1px solid transparent; background:var(--ec-fg-4); color:var(--ec-fg-72); white-space:nowrap; transition:background .12s,color .12s; }
+.fchip:hover { background:var(--ec-fg-12); color:var(--ec-fg-96); }
+.fchip.is-active { background:var(--ec-green-08); border-color:var(--ec-green); color:var(--ec-fg-96); }
+.fchip__n { color:var(--ec-fg-48); font-variant-numeric:tabular-nums; }
+.fchip.is-active .fchip__n { color:var(--ec-fg-72); }
+.fchip__dot { width:8px; height:8px; border-radius:999px; background:var(--dot, var(--ec-fg-32)); }
+/* toogle (11:411) */
+.tgl { display:inline-flex; align-items:center; gap:6px; height:24px; color:var(--ec-fg-72); cursor:pointer; white-space:nowrap; }
+.tgl input { position:absolute; opacity:0; width:0; height:0; }
+.tgl__track { position:relative; width:24px; height:14px; border-radius:999px; background:var(--ec-fg-16); transition:background .12s; flex-shrink:0; }
+.tgl__track::after { content:''; position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:999px; background:var(--ec-fg-80); transition:transform .12s,background .12s; }
+.tgl input:checked + .tgl__track { background:var(--ec-green); }
+.tgl input:checked + .tgl__track::after { transform:translateX(10px); background:var(--ec-ink); }
+.tgl input:focus-visible + .tgl__track { outline:1px solid var(--ec-fg-24); outline-offset:1px; }
+/* чекбокс */
+.ck { appearance:none; width:14px; height:14px; border-radius:3px; border:1px solid var(--ec-fg-24); background:var(--ec-fg-4); display:grid; place-items:center; cursor:pointer; flex-shrink:0; margin:0; }
+.ck:checked { background:var(--ec-green); border-color:var(--ec-green); }
+.ck:checked::after { content:''; width:8px; height:5px; border-left:2px solid var(--ec-ink); border-bottom:2px solid var(--ec-ink); transform:translateY(-1px) rotate(-45deg); }
+.ck:disabled { opacity:.4; cursor:default; }
+/* статус-бейдж */
+.status { display:inline-flex; align-items:center; gap:6px; height:20px; padding:0 6px 0 4px; border-radius:var(--ec-radius); color:var(--ec-fg-72); white-space:nowrap; }
+.status::before { content:''; width:8px; height:8px; border-radius:999px; background:var(--st-untranslated); flex-shrink:0; }
+.status--translated::before { background:var(--st-translated); }
+.status--outdated::before { background:var(--st-outdated); }
+.status--auto::before { background:var(--st-auto); }
+.status--ignored::before { background:transparent; border:1px solid var(--ec-fg-32); }
+.status--error::before { background:var(--st-error); }
+/* тег */
+.tag { display:inline-flex; align-items:center; height:18px; padding:0 6px; border-radius:var(--ec-radius); background:var(--ec-fg-8); color:var(--ec-fg-64); font-size:11px; white-space:nowrap; }
+.tag--green { background:var(--ec-green-16); color:var(--ec-badge); }
+.tag--amber { background:rgba(235,193,74,.16); color:var(--ec-amber); }
+/* прогресс */
+.bar { display:flex; height:4px; border-radius:999px; background:var(--ec-fg-8); overflow:hidden; }
+.bar i { display:block; height:100%; }
+.bar .b-translated { background:var(--st-translated); }
+.bar .b-outdated { background:var(--st-outdated); }
+.bar .b-auto { background:var(--st-auto); opacity:.7; }
+.pct { font-variant-numeric:tabular-nums; color:var(--ec-fg-72); }
+.avatar { width:20px; height:20px; border-radius:999px; background:var(--av, var(--op-violet)); color:var(--ec-ink); display:grid; place-items:center; font-size:8px; font-weight:700; flex-shrink:0; }
+
+/* ======================================================== LEFT: APPS TREE === */
+.tree { padding:4px; }
+.tree__group { display:flex; align-items:center; gap:4px; height:24px; padding:0 4px; color:var(--ec-fg-56); font-weight:600; border-radius:var(--ec-radius); cursor:pointer; }
+.tree__group:hover { background:var(--ec-fg-4); color:var(--ec-fg-80); }
+.tree__group .icon { color:var(--ec-fg-48); transition:transform .12s; }
+.tree__group.is-open .icon { transform:rotate(90deg); }
+.tree__group .pct { margin-left:auto; font-weight:400; }
+/* Tree operations row (26:1333) */
+.trow { display:flex; align-items:center; gap:6px; height:24px; padding:0 4px 0 20px; border-radius:var(--ec-radius); color:var(--ec-fg-72); cursor:pointer; width:100%; text-align:left; }
+.trow:hover { background:var(--ec-fg-4); color:var(--ec-fg-96); }
+.trow.is-selected { background:var(--ec-fg-8); color:var(--ec-fg-100); }
+.trow__name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.trow__id { color:var(--ec-fg-40, var(--ec-fg-48)); font-size:11px; }
+.trow__star { color:var(--ec-fg-24); }
+.trow__star.is-on { color:var(--ec-amber); }
+.trow .bar { width:24px; flex-shrink:0; }
+.trow .pct { flex-shrink:0; min-width:32px; text-align:right; }
+.trow--all { padding-left:4px; font-weight:600; margin-bottom:2px; }
+
+/* ====================================================== CENTER: STRINGS === */
+.toolbar { display:flex; align-items:center; gap:6px; padding:6px 8px; border-bottom:1px solid var(--divider); flex-wrap:wrap; flex-shrink:0; }
+.toolbar__sep { width:1px; height:16px; background:var(--ec-fg-12); margin:0 2px; }
+.grid-head, .srow { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) 132px 112px 128px; align-items:center; gap:8px; padding:0 8px 0 12px; }
+.grid-head { height:24px; color:var(--ec-fg-48); font-size:11px; border-bottom:1px solid var(--divider); position:sticky; top:0; background:var(--ec-card-2); z-index:1; user-select:none; }
+.grid-head span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.grid-head small { color:var(--ec-fg-32); margin-left:4px; }
+.srow { height:24px; width:100%; text-align:left; color:var(--ec-fg-80); border-radius:0; cursor:pointer; }
+.srow:hover { background:var(--ec-fg-4); color:var(--ec-fg-96); }
+.srow.is-selected { background:var(--ec-fg-8); color:var(--ec-fg-100); box-shadow:inset 2px 0 0 var(--ec-green); }
+.srow.is-ignored { color:var(--ec-fg-40, var(--ec-fg-48)); }
+.srow.is-ignored .srow__src { text-decoration:line-through; text-decoration-color:var(--ec-fg-24); }
+.srow > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.srow__src, .srow__tr { display:flex; align-items:center; gap:6px; }
+.srow__key { color:var(--ec-fg-32); font-size:11px; flex-shrink:0; }
+.srow__tr .empty { color:var(--ec-fg-32); font-style:italic; }
+.srow__nl { color:var(--ec-fg-32); font-family:ui-monospace,monospace; font-size:10px; }
+.srow__meta { display:flex; align-items:center; gap:6px; color:var(--ec-fg-56); }
+.srow__owner { display:flex; align-items:center; gap:6px; color:var(--ec-fg-56); }
+.srow__owner.is-me { color:var(--ec-fg-80); }
+.srow__warn { color:var(--st-error); }
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:48px 16px; color:var(--ec-fg-48); text-align:center; }
+.empty-state .icon { width:24px; height:24px; color:var(--ec-fg-24); }
+.empty-state b { color:var(--ec-fg-72); font-weight:600; }
+
+/* ====================================================== RIGHT: INSPECTOR === */
+.insp { display:flex; flex-direction:column; min-height:0; flex:1; }
+.insp__scroll { flex:1; min-height:0; overflow:auto; padding:8px 12px 12px; display:flex; flex-direction:column; gap:8px; }
+/* Title row (3:395) */
+.trow-title { display:flex; align-items:center; gap:6px; height:24px; font-size:14px; line-height:20px; font-weight:600; }
+.trow-title .status { margin-left:auto; }
+/* Inspector Row (1:156): подпись 96px + слот параметров */
+.irow { display:flex; align-items:center; gap:8px; min-height:24px; padding:0 4px; margin:0 -4px; border-radius:var(--ec-radius); }
+.irow:hover { background:var(--ec-fg-4); }
+.irow__label { width:96px; flex-shrink:0; color:var(--ec-fg-48); }
+.irow__val { flex:1; min-width:0; display:flex; align-items:center; gap:6px; color:var(--ec-fg-80); overflow:hidden; }
+.irow__val .ellipsis { flex:1; }
+.irow__val code { color:var(--ec-fg-80); }
+.sect { display:flex; flex-direction:column; gap:4px; }
+.sect__head { display:flex; align-items:center; gap:6px; height:24px; color:var(--ec-fg-48); }
+.sect__head b { color:var(--ec-fg-64); font-weight:600; }
+.sect__head .ibtn { margin-left:auto; }
+.sect__head .lang { display:inline-grid; place-items:center; height:16px; padding:0 4px; border-radius:2px; background:var(--ec-fg-8); color:var(--ec-fg-72); font-size:10px; font-weight:600; }
+.sect__head .lang.is-target { background:var(--ec-green-16); color:var(--ec-badge); }
+.srcbox { padding:6px 8px; border-radius:var(--ec-radius); background:var(--ec-fg-4); color:var(--ec-fg-96); white-space:pre-wrap; word-break:break-word; border:1px solid var(--divider); }
+.srcbox .nl { color:var(--ec-fg-32); font-family:ui-monospace,monospace; font-size:10px; margin:0 2px; }
+.srcbox del { color:var(--ec-fg-48); text-decoration-color:var(--st-outdated); }
+.editor { position:relative; }
+.editor textarea { display:block; width:100%; min-height:72px; resize:vertical; padding:6px 8px; border-radius:var(--ec-radius);
+  background:var(--ec-fg-4); border:1px solid var(--divider); color:var(--ec-fg-100); outline:none; white-space:pre-wrap; }
+.editor textarea:focus { border-color:var(--ec-fg-16); background:var(--ec-fg-6); }
+.editor textarea:disabled { color:var(--ec-fg-48); }
+.editor textarea::placeholder { color:var(--ec-fg-40, var(--ec-fg-48)); }
+.editor__tools { display:flex; align-items:center; gap:2px; margin-top:4px; }
+.editor__tools .spacer { flex:1; }
+.editor__tools small { color:var(--ec-fg-40, var(--ec-fg-48)); font-variant-numeric:tabular-nums; }
+.checks { display:flex; flex-direction:column; gap:2px; }
+.check { display:flex; align-items:center; gap:6px; min-height:20px; color:var(--ec-fg-64); }
+.check .icon { width:14px; height:14px; }
+.check.ok .icon { color:var(--ec-green); }
+.check.fail { color:var(--ec-fg-96); }
+.check.fail .icon { color:var(--st-error); }
+.notice { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; border-radius:var(--ec-radius); background:var(--ec-fg-4); color:var(--ec-fg-72); border-left:2px solid var(--ec-fg-24); }
+.notice--amber { border-left-color:var(--ec-amber); }
+.notice--blue { border-left-color:var(--st-auto); }
+.notice--green { border-left-color:var(--ec-green); }
+.notice .icon { color:var(--ec-fg-56); margin-top:0; }
+.insp__foot { flex-shrink:0; display:flex; flex-direction:column; gap:4px; padding:8px 12px; border-top:1px solid var(--divider); background:var(--ec-card-2); }
+.insp__foot .row { display:flex; gap:4px; }
+.insp__foot .row .btn { flex:1; justify-content:center; }
+/* sub tabs внутри инспектора (.seg из v2) */
+.seg { display:flex; gap:2px; padding:2px; border-radius:var(--ec-radius); background:var(--ec-fg-4); }
+.seg button { flex:1; height:20px; border-radius:2px; color:var(--ec-fg-64); white-space:nowrap; }
+.seg button:hover { color:var(--ec-fg-96); }
+.seg button.is-active { background:var(--ec-bg-96); color:var(--ec-fg-100); font-weight:600; }
+.seg button small { color:var(--ec-fg-40, var(--ec-fg-48)); margin-left:4px; font-weight:400; }
+/* контекст — схема окна */
+.win { border:1px solid var(--border); border-radius:var(--ec-radius); background:var(--ec-bg); overflow:hidden; cursor:pointer; text-align:left; width:100%; }
+.win:hover { border-color:var(--ec-fg-24); }
+.win__bar { display:flex; align-items:center; gap:4px; height:20px; padding:0 6px; background:var(--ec-rail); border-bottom:1px solid var(--divider); color:var(--ec-fg-56); font-size:10px; }
+.win__bar i { width:6px; height:6px; border-radius:999px; background:var(--ec-fg-16); }
+.win__body { padding:8px; display:flex; flex-direction:column; gap:4px; }
+.win__row { display:flex; align-items:center; gap:6px; height:20px; }
+.win__row span:first-child { width:72px; color:var(--ec-fg-40, var(--ec-fg-48)); font-size:10px; }
+.win__ctl { flex:1; height:18px; border-radius:3px; background:var(--ec-fg-4); border:1px solid var(--divider); }
+.win__ctl.is-hl { border-color:var(--ec-green); background:var(--ec-green-08); color:var(--ec-fg-96); font-size:10px; padding:0 4px; display:flex; align-items:center; overflow:hidden; white-space:nowrap; }
+.win__btns { display:flex; gap:4px; justify-content:flex-end; margin-top:2px; }
+.win__btns span { height:16px; padding:0 8px; border-radius:2px; background:var(--ec-fg-8); font-size:10px; color:var(--ec-fg-56); display:flex; align-items:center; }
+.hist { display:flex; flex-direction:column; }
+.hist__e { display:grid; grid-template-columns:20px 1fr; gap:0 8px; padding:4px 0; }
+.hist__e .avatar { margin-top:2px; }
+.hist__meta { display:flex; align-items:center; gap:6px; color:var(--ec-fg-48); height:20px; }
+.hist__meta b { color:var(--ec-fg-80); font-weight:500; }
+.hist__text { color:var(--ec-fg-72); white-space:pre-wrap; word-break:break-word; }
+.match { display:flex; align-items:center; gap:6px; height:24px; color:var(--ec-fg-64); }
+.match .ck { margin-right:2px; }
+.match .ellipsis { flex:1; }
+.match .tag { flex-shrink:0; }
+
+/* ===================================================== PROGRESS / ADMIN === */
+.cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:8px; }
+.card { display:flex; flex-direction:column; gap:6px; padding:10px 12px; border-radius:var(--ec-radius-md); background:var(--ec-card-2); border:1px solid var(--border); text-align:left; }
+.card:hover { border-color:var(--ec-fg-24); }
+.card__head { display:flex; align-items:center; gap:8px; }
+.card__tag { display:grid; place-items:center; width:32px; height:24px; border-radius:var(--ec-radius); background:var(--ec-fg-8); font-weight:700; font-size:11px; color:var(--ec-fg-96); }
+.card__title { font-weight:600; }
+.card__sub { color:var(--ec-fg-48); font-size:11px; }
+.card__big { font-size:20px; line-height:24px; font-weight:600; font-variant-numeric:tabular-nums; }
+.card__big small { font-size:12px; color:var(--ec-fg-48); font-weight:400; margin-left:2px; }
+.card__legend { display:flex; gap:10px; color:var(--ec-fg-48); font-size:11px; }
+.card__legend b { color:var(--ec-fg-72); font-weight:500; }
+.table { width:100%; border-collapse:collapse; }
+.table th { height:24px; text-align:left; color:var(--ec-fg-48); font-weight:400; font-size:11px; padding:0 8px; border-bottom:1px solid var(--divider); white-space:nowrap; position:sticky; top:0; background:var(--ec-card-2); }
+.table td { height:28px; padding:0 8px; border-bottom:1px solid var(--divider); color:var(--ec-fg-80); white-space:nowrap; vertical-align:middle; }
+.table tr:hover td { background:var(--ec-fg-4); }
+.table td.num, .table th.num { text-align:right; font-variant-numeric:tabular-nums; }
+.table .cell-app { display:flex; align-items:center; gap:8px; }
+.table .cell-app small { color:var(--ec-fg-40, var(--ec-fg-48)); }
+.cell-pct { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+.cell-pct .bar { width:56px; }
+.cell-pct button { padding:0 4px; border-radius:2px; color:var(--ec-fg-72); font-variant-numeric:tabular-nums; min-width:36px; text-align:right; }
+.cell-pct button:hover { background:var(--ec-fg-8); color:var(--ec-fg-100); }
+.cell-langs { display:flex; gap:4px; flex-wrap:wrap; }
+.cell-langs label { display:inline-flex; align-items:center; gap:4px; height:20px; padding:0 6px; border-radius:var(--ec-radius); background:var(--ec-fg-4); color:var(--ec-fg-64); cursor:pointer; }
+.cell-langs label:hover { background:var(--ec-fg-8); }
+.cell-langs label.is-on { background:var(--ec-green-08); color:var(--ec-fg-96); box-shadow:inset 0 0 0 1px var(--ec-green); }
+.split { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.kv { display:flex; align-items:flex-start; gap:8px; min-height:24px; padding:4px 0; }
+.kv__k { width:160px; flex-shrink:0; color:var(--ec-fg-48); }
+.kv__v { flex:1; color:var(--ec-fg-80); }
+.steps { counter-reset:s; display:flex; flex-direction:column; gap:6px; }
+.steps li { display:grid; grid-template-columns:20px 1fr; gap:8px; list-style:none; }
+.steps li::before { counter-increment:s; content:counter(s); width:20px; height:20px; border-radius:999px; background:var(--ec-fg-8); color:var(--ec-fg-72); display:grid; place-items:center; font-size:11px; font-weight:600; }
+.steps b { color:var(--ec-fg-96); font-weight:600; }
+.steps p { color:var(--ec-fg-64); margin-top:2px; }
+.prose p { color:var(--ec-fg-72); margin:4px 0; }
+.prose ul { padding-left:16px; color:var(--ec-fg-72); }
+.prose li { margin:2px 0; }
+.prose b { color:var(--ec-fg-96); font-weight:600; }
+.prose code { padding:0 4px; border-radius:2px; background:var(--ec-fg-8); color:var(--ec-fg-80); }
+.form { display:flex; flex-direction:column; gap:8px; }
+.form .kv__k { width:128px; padding-top:4px; }
+.form .field, .form .dd { width:100%; }
+.form .dd select { width:100%; max-width:none; }
+.form textarea { width:100%; min-height:64px; padding:6px 8px; border-radius:var(--ec-radius); background:var(--ec-fg-4); border:1px solid var(--divider); color:var(--ec-fg-100); outline:none; resize:vertical; }
+.form small { color:var(--ec-fg-48); display:block; margin-top:2px; }
+.form__err { color:var(--st-error); min-height:16px; }
+.form .kv { align-items:flex-start; }
+.form .kv__v { display:flex; flex-direction:column; gap:2px; }
+.form .cell-langs { padding-top:2px; }
+
+/* ======================================================= MODAL / TOASTS === */
+dialog { position:fixed; inset:0; margin:auto; width:min(480px, calc(100vw - 32px)); max-height:calc(100vh - 32px); padding:0; border:1px solid var(--border);
+  border-radius:var(--ec-radius-lg); background:var(--ec-popover); color:var(--ec-fg-100); box-shadow:var(--ec-shadow); }
+dialog::backdrop { background:var(--ec-bg-80); }
+.modal__head { display:flex; align-items:center; gap:8px; height:40px; padding:0 8px 0 16px; border-bottom:1px solid var(--divider); }
+.modal__head h2 { flex:1; font-size:14px; line-height:20px; font-weight:600; }
+.modal__body { padding:12px 16px; max-height:calc(100vh - 160px); overflow:auto; display:flex; flex-direction:column; gap:8px; color:var(--ec-fg-80); }
+.modal__foot { display:flex; justify-content:flex-end; gap:4px; padding:8px 16px 12px; }
+#toasts { position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:6px; z-index:50; pointer-events:none; }
+.toast { display:flex; align-items:center; gap:8px; min-height:28px; padding:0 10px; border-radius:var(--ec-radius-md); background:var(--ec-popover);
+  border:1px solid var(--border); border-left:2px solid var(--ec-green); box-shadow:var(--ec-shadow); color:var(--ec-fg-96); animation:toast .16s ease-out; }
+.toast--warning { border-left-color:var(--ec-amber); }
+.toast .icon { color:var(--ec-fg-56); }
+@keyframes toast { from { transform:translateY(6px); opacity:0; } to { transform:none; opacity:1; } }
+
+/* ========================================================== RESPONSIVE === */
+@media (max-width:1280px) {
+  .workspace--rows { grid-template-columns:200px minmax(0,1fr) 340px; }
+  .grid-head, .srow { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 112px 120px; }
+  .grid-head .col-owner, .srow__owner { display:none; }
+}
+@media (max-width:1024px) {
+  .workspace--rows { grid-template-columns:minmax(0,1fr) 340px; }
+  .panel--tree { display:none; }
+  .header .btn span { display:none; }
+}
+@media (max-width:760px) {
+  .workspace--rows { grid-template-columns:minmax(0,1fr); }
+  .panel--insp { position:fixed; inset:56px 8px 8px; z-index:20; display:none; }
+  .app.is-editor-open .panel--insp { display:flex; }
+  .grid-head, .srow { grid-template-columns:minmax(0,1fr) 100px; }
+  .grid-head .col-tr, .srow__tr, .grid-head .col-meta, .srow__meta { display:none; }
+  .header { gap:4px; padding:0 8px; }
+  .brand__name small, .header__sep { display:none; }
+}
+
+</style>
+</head>
+<body>
+  <div id="app" class="app"></div>
+  <dialog id="modal" aria-labelledby="modal-title"></dialog>
+  <div id="toasts" aria-live="polite" aria-atomic="true"></div>
+  <script>
+(() => {
+"use strict";
+const STATUS = {
+  translated: { label: 'Переведено', en: 'Translated', icon: 'check' },
+  outdated: { label: 'Устарело', en: 'Outdated', icon: 'clock' },
+  untranslated: { label: 'Без перевода', en: 'Not translated', icon: 'circle' },
+  auto: { label: 'Автоперевод', en: 'Autotranslated', icon: 'sparkles' }
+};
+
+// Подуровень внутри приложения: откуда пришла строка (второй комбобокс из отзыва Рустама).
+const MODULES = {
+  VCL: { label: 'Формы VCL', hint: 'Подписи окон, кнопок и меню' },
+  XML: { label: 'XML-конфигурация', hint: 'Параметры, описанные в XML' },
+  SmartHints: { label: 'Смарт-подсказки', hint: 'Тексты подсказок и справки' }
+};
+
+const LANGUAGES = [
+  { code: 'ru', name: 'Русский', native: 'Русский', tag: 'RU', color: '#6d62d9' },
+  { code: 'de', name: 'Немецкий', native: 'Deutsch', tag: 'DE', color: '#e09b43' },
+  { code: 'es', name: 'Испанский', native: 'Español', tag: 'ES', color: '#d57977' },
+  { code: 'fr', name: 'Французский', native: 'Français', tag: 'FR', color: '#5e94d3' }
+];
+
+const appData = [
+  ['CAM','Интерфейс CAM','ENCY','Траектории, обработка и параметры операций'],
+  ['CAM_CAD','Моделирование CAD','ENCY','Создание и редактирование геометрии'],
+  ['CAM_prime','ENCY Prime','ENCY','Основные инструменты ENCY Prime'],
+  ['CAMSmartHint','Подсказки CAM','ENCY','Справка и интерактивные подсказки'],
+  ['CAMStartPage','Стартовая страница','ENCY','Начало работы и последние проекты'],
+  ['XMLCONFIG','Конфигурация CAM','ENCY','XML-параметры интерфейса CAM'],
+  ['S4_forms','Окна и диалоги','ENCY','Формы и стандартные диалоги'],
+  ['S4_ide','Среда разработки','ENCY','Редактор и инструменты разработчика'],
+  ['NCKernel','Ядро обработки','ENCY','Расчёт и проверка траекторий'],
+  ['MachineMaker','Конструктор станков','Инструменты','Кинематические схемы и оборудование'],
+  ['ProjectLib','Библиотека проектов','Инструменты','Работа с библиотекой проектов'],
+  ['PLMToolConverter','Конвертер PLM','Инструменты','Импорт и преобразование инструмента'],
+  ['InterpreterConfigurator','Настройка интерпретатора','Инструменты','Конфигурация интерпретации УП'],
+  ['InterpreterCreator','Создание интерпретатора','Инструменты','Разработка интерпретаторов'],
+  ['InP','Импорт и постпроцессоры','Инструменты','Импорт данных и постпроцессирование'],
+  ['AddinManager','Менеджер дополнений','Сервисы','Установка и управление дополнениями'],
+  ['Cloud','ENCY Cloud','Сервисы','Облачное пространство проектов'],
+  ['FileUploader','Загрузка файлов','Сервисы','Передача файлов на сервер'],
+  ['Installer','Установщик','Сервисы','Установка и восстановление продукта'],
+  ['LicManager','Менеджер лицензий','Сервисы','Активация и управление лицензиями'],
+  ['SCStatistic','Статистика','Сервисы','Статистика использования продукта'],
+  ['SendSupportMessage','Обращение в поддержку','Сервисы','Отправка диагностических данных'],
+  ['STeamCenter','Teamcenter','Сервисы','Интеграция с Siemens Teamcenter'],
+  ['Updater','Обновление ENCY','Сервисы','Проверка и установка обновлений'],
+  ['Tuner Core','Ядро Tuner','Tuner','Основные функции и вычисления'],
+  ['Tuner Monitor','Монитор Tuner','Tuner','Мониторинг и диагностика'],
+  ['Tuner Shell','Оболочка Tuner','Tuner','Интерфейс и рабочее пространство'],
+  ['Tuner XML','Конфигурация Tuner','Tuner','Параметры Tuner в XML']
+];
+const APPS = appData.map((a,i)=>({ id:a[0], name:a[1], group:a[2], description:a[3], owner:i%3===0?'Алексей Морозов':i%3===1?'Анна Волкова':'Дмитрий Соколов', mine:[0,1,3,24].includes(i), color:['#7365db','#579ea0','#638bd0','#b483bf'][i%4] }));
+
+const DEALERS = [
+  { id:'dealer-a', name:'Дилер A', region:'Европа', languages:['ru','de'], people:4 },
+  { id:'dealer-b', name:'Дилер B', region:'СНГ', languages:['ru'], people:3 },
+  { id:'dealer-c', name:'Дилер C', region:'Европа', languages:['es','fr'], people:2 }
+];
+
+// All content is a curated demonstration corpus, not production ENCY resources.
+const terms = [
+  ['Toolpath.Calculate','Calculate toolpath','Рассчитать траекторию','Werkzeugweg berechnen','Calcular trayectoria','Calculer la trajectoire','Операция → Траектория'],
+  ['Operation.Finish','Finish machining','Чистовая обработка','Schlichtbearbeitung','Mecanizado de acabado','Usinage de finition','Операция → Стратегия'],
+  ['Tool.SpindleSpeed','Spindle speed, rpm','Частота вращения шпинделя, об/мин','Spindeldrehzahl, U/min','Velocidad del husillo, rpm','Vitesse de broche, tr/min','Инструмент → Режимы резания'],
+  ['Tool.FeedRate','Feed rate','Скорость подачи','Vorschubgeschwindigkeit','Velocidad de avance',"Vitesse d’avance",'Инструмент → Режимы резания'],
+  ['Stock.Allowance','Stock allowance','Припуск на обработку','Bearbeitungsaufmaß','Sobrematerial','Surépaisseur','Операция → Параметры'],
+  ['Operation.SafeHeight','Safe height','Безопасная высота','Sicherheitshöhe','Altura de seguridad','Hauteur de sécurité','Операция → Переходы'],
+  ['Tool.Select','Select a tool','Выберите инструмент','Werkzeug auswählen','Seleccionar una herramienta','Sélectionner un outil','Инструмент → Выбор'],
+  ['Operation.Collision','Collision detected for tool %s','Обнаружено столкновение инструмента %s','Kollision für Werkzeug %s erkannt','Colisión detectada para la herramienta %s',"Collision détectée pour l’outil %s",'Моделирование → Проверка столкновений'],
+  ['Operation.Depth','Depth of cut','Глубина резания','Schnitttiefe','Profundidad de corte','Profondeur de passe','Операция → Параметры'],
+  ['Operation.StepOver','Stepover','Шаг между проходами','Seitliche Zustellung','Paso lateral','Pas latéral','Операция → Параметры'],
+  ['Operation.Rough','Rough machining','Черновая обработка','Schruppbearbeitung','Mecanizado de desbaste','Usinage d’ébauche','Операция → Стратегия'],
+  ['Toolpath.Smoothing','Toolpath smoothing','Сглаживание траектории','Werkzeugwegglättung','Suavizado de trayectoria','Lissage de trajectoire','Операция → Траектория'],
+  ['Operation.Warning','The operation contains %d errors.\nCheck the machining parameters.','Операция содержит ошибок: %d.\nПроверьте параметры обработки.','Die Operation enthält %d Fehler.\nPrüfen Sie die Bearbeitungsparameter.','La operación contiene %d errores.\nCompruebe los parámetros de mecanizado.',"L’opération contient %d erreurs.\nVérifiez les paramètres d’usinage.",'Операция → Сообщения'],
+  ['Geometry.Surface','Select surfaces','Выберите поверхности','Flächen auswählen','Seleccionar superficies','Sélectionner les surfaces','Геометрия → Выбор'],
+  ['Geometry.Coordinate','Work coordinate system','Система координат заготовки','Werkstückkoordinatensystem','Sistema de coordenadas de trabajo','Système de coordonnées pièce','Геометрия → Система координат'],
+  ['Operation.Apply','Apply','Применить','Anwenden','Aplicar','Appliquer','Операция → Параметры'],
+  ['Tool.Apply','Apply','Применить','Anwenden','Aplicar','Appliquer','Инструмент → Параметры'],
+  ['Geometry.Apply','Apply','Применить','Anwenden','Aplicar','Appliquer','Геометрия → Параметры'],
+  ['Dialog.OK','OK','ОК','OK','Aceptar','OK','Диалог → Кнопки'],
+  ['Dialog.Cancel','Cancel','Отмена','Abbrechen','Cancelar','Annuler','Диалог → Кнопки'],
+  ['Project.Save','Save project','Сохранить проект','Projekt speichern','Guardar proyecto','Enregistrer le projet','Файл → Проект'],
+  ['Project.Open','Open project','Открыть проект','Projekt öffnen','Abrir proyecto','Ouvrir le projet','Файл → Проект'],
+  ['Project.Name','Project name','Имя проекта','Projektname','Nombre del proyecto','Nom du projet','Файл → Свойства'],
+  ['Dialog.Settings','Settings','Настройки','Einstellungen','Configuración','Paramètres','Сервис → Настройки'],
+  ['Dialog.Close','Close','Закрыть','Schließen','Cerrar','Fermer','Диалог → Кнопки'],
+  ['Message.Progress','Processing file %s (%d of %d)','Обработка файла %s (%d из %d)','Datei %s wird verarbeitet (%d von %d)','Procesando archivo %s (%d de %d)','Traitement du fichier %s (%d sur %d)','Сообщения → Прогресс'],
+  ['Action.Refresh','Refresh','Обновить','Aktualisieren','Actualizar','Actualiser','Сервис → Данные'],
+  ['Action.Remove','Remove','Удалить','Entfernen','Eliminar','Supprimer','Сервис → Данные'],
+  ['Action.Import','Import','Импорт','Importieren','Importar','Importer','Файл → Импорт'],
+  ['Action.Export','Export','Экспорт','Exportieren','Exportar','Exporter','Файл → Экспорт']
+];
+
+function makeRows(apps = APPS) {
+  return apps.flatMap((app,ai)=>{
+    const subset = app.id==='CAM'?terms:app.group==='ENCY'||app.group==='Tuner'?[...terms.slice(ai%6,ai%6+5),...terms.slice(18)]:terms.slice(18);
+    const rows = subset.map((t,i)=>({
+      id:app.id+'.'+t[0], app:app.id, code:t[0], source:t[1],
+      suggestions:{ru:t[2],de:t[3],es:t[4],fr:t[5]}, context:t[6],
+      module:i%4===0?'SmartHints':i%3===0?'XML':'VCL', owner:app.owner,
+      previousSource:t[0]==='Tool.SpindleSpeed'?'Spindle speed':t[0]==='Operation.SafeHeight'?'Clearance height':null,
+      addedIn:'17.0', index:i, ignored:false,
+      note:t[0]==='Stock.Allowance'?'В CAM stock allowance означает припуск, а не запас.':t[0]==='Operation.Finish'?'Finish в этом контексте — чистовая обработка, а не завершение операции.':null
+    }));
+    if(app.id==='CAM') rows.push(
+      {id:'CAM.Internal.StPanel',app:'CAM',code:'Internal.StPanel',source:'StPanel',suggestions:{},context:'Внутренние компоненты',module:'VCL',owner:app.owner,index:30,ignored:true,reason:'Технический идентификатор'},
+      {id:'CAM.Axis.Rx',app:'CAM',code:'Axis.Rx',source:'Rx',suggestions:{},context:'Оси станка',module:'XML',owner:app.owner,index:31,ignored:true,reason:'Обозначение оси'},
+      {id:'CAM.Formula.Radius',app:'CAM',code:'Formula.Radius',source:'R = D / 2',suggestions:{},context:'Расчёт геометрии',module:'XML',owner:app.owner,index:32,ignored:true,reason:'Формула'}
+    );
+    return rows;
+  });
+}
+
+function initialTranslation(row,lang,version='18.0') {
+  const suggestion=row.suggestions[lang]||'';
+  if(!suggestion || row.ignored) return {text:'',status:'untranslated',history:[]};
+  let status = ['auto','translated','outdated','translated','auto','outdated','untranslated','auto','translated','translated','translated','untranslated'][row.index%12];
+  if(!row.previousSource && status==='outdated') status='translated';
+  if(version==='17.0' && status==='outdated') status='translated';
+  if(lang!=='ru' && row.index%4===0) status='untranslated';
+  let text=status==='untranslated'?'':suggestion;
+  if(lang==='ru' && status==='outdated') text=row.code==='Tool.SpindleSpeed'?'Скорость шпинделя':'Высота отвода';
+  return {text,status,history:text?[{text,status,author:status==='auto'?'Автоперевод · демо':'Анна Волкова',date:'2026-09-15T10:40:00.000Z'}]:[]};
+}
+
+
+const accepted = s => s==='translated'||s==='outdated';
+const entryKey = (version,lang,id) => `${version}|${lang}|${id}`;
+const sourceFor = (row,version) => version==='17.0'?(row.previousSource||row.source):row.source;
+function placeholders(text) {
+  return (String(text).replace(/%%/g,'').match(/%(?:\d+\$)?[-+#0 ]*(?:\d+|\*)?(?:\.(?:\d+|\*))?[sdifuxXoegc]|\{\{[^{}]+\}\}|\{[A-Za-z_0-9][A-Za-z_0-9.]*\}/g)||[]).sort();
+}
+function validate(source,text,dealers=[]) {
+  const checks=[];
+  const p=placeholders(source), q=placeholders(text);
+  checks.push({id:'empty',ok:!!text.trim(),label:text.trim()?'Перевод заполнен':'Добавьте перевод'});
+  checks.push({id:'placeholders',ok:JSON.stringify(p)===JSON.stringify(q),label:JSON.stringify(p)===JSON.stringify(q)?`Параметры сохранены${p.length?' · '+p.join(', '):''}`:`Сохраните параметры: ${p.join(', ')||'в исходной строке их нет'}`});
+  const sn=(source.match(/\n/g)||[]).length, tn=(text.match(/\n/g)||[]).length;
+  checks.push({id:'newlines',ok:sn===tn,label:sn===tn?`Переносы строк совпадают${sn?' · '+sn:''}`:`Переносы строк: ожидается ${sn}, сейчас ${tn}`});
+  const hasContact=/(?:https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b[\w-]+\.(?:ru|com|net|org|io|de|cn|fr|es|co|рф)\b)/iu.test(text)||/(?:\+?\d[\d ()-]{6,}\d)/.test(text)||dealers.some(x=>x.name && text.toLowerCase().includes(x.name.toLowerCase()));
+  checks.push({id:'contacts',ok:!hasContact,label:hasContact?'Удалите контакты, сайт или название дилера':'Нет контактов и названий дилеров'});
+  return checks;
+}
+function stats(rows,getTranslation,isIgnored=()=>false) {
+  const out={total:0,translated:0,outdated:0,untranslated:0,auto:0,ignored:0};
+  for(const row of rows) { if(isIgnored(row)){out.ignored++;continue;} out.total++; const s=getTranslation(row).status;out[s]=(out[s]||0)+1; }
+  out.percent=out.total?Math.round(out.translated/out.total*100):0;
+  out.exportable=out.translated+out.outdated;
+  return out;
+}
+function exportLng(rows,getTranslation,isIgnored,version,lang) {
+  const groups=new Map();let count=0;
+  for(const row of rows) {
+    const t=getTranslation(row);if(isIgnored(row)||!accepted(t.status)||!t.text.trim())continue;
+    if(!groups.has(row.app))groups.set(row.app,[]);
+    const escape=s=>s.replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n');
+    groups.get(row.app).push(`${row.code}=${escape(t.text)}`);count++;
+  }
+  return {count,content:`; ENCY Software / Спрут Технологии\n; Demo LNG format · ${version} · ${lang}\n; Translated + Outdated only\n\n`+[...groups].map(([app,lines])=>`[${app}]\n${lines.join('\n')}`).join('\n\n')+'\n'};
+}
+function migratedTranslation(row,fromVersion,toVersion,old) {
+  if(!accepted(old.status))return null;
+  return {...old,status:sourceFor(row,fromVersion)===sourceFor(row,toVersion)?old.status:'outdated',history:[...(old.history||[]),{text:old.text,status:sourceFor(row,fromVersion)===sourceFor(row,toVersion)?old.status:'outdated',author:`Перенос из ${fromVersion}`,date:new Date().toISOString()}]};
+}
+
+
+/* ------------------------------------------------------------------ utils */
+const $ = s => document.querySelector(s);
+const $ = s => [...document.querySelectorAll(s)];
+const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => new Intl.NumberFormat('ru-RU').format(n);
+const initials = name => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+const avColor = name => ['--op-violet','--op-blue','--op-green','--op-yellow','--op-coral'][[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % 5];
+
+// Иконки: временный набор контурных 16px глифов в стиле Core. При подключении Figma
+// заменить на реальные SVG из наборов icn_inspector / Filters icons (см. components.md).
+const paths = {
+  translate:'M3 5h8M7 3v2m3 0c0 4-3 7-7 8m1-4c1 2 3 3 5 4m2 6 3-8 3 8m-5-2.5h4',
+  chart:'M3 13h10M4 11V7m3 4V4m3 7V6',
+  shield:'m8 2 5 2v4c0 3-5 5-5 5S3 11 3 8V4zM6 8l1.5 1.5L10 6',
+  book:'M2 3h4a2 2 0 0 1 2 2v8a2 2 0 0 0-2-2H2V3m12 0h-4a2 2 0 0 0-2 2v8a2 2 0 0 1 2-2h4V3',
+  search:'M7 11.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9m3.2-1.3L14 14',
+  down:'m4 6 4 4 4-4', right:'m6 4 4 4-4 4', left:'m10 4-4 4 4 4', up:'m4 10 4-4 4 4',
+  download:'M8 2v8m-3-3 3 3 3-3M3 11v2h10v-2',
+  sparkles:'m8 2 1.6 4.4L14 8l-4.4 1.6L8 14l-1.6-4.4L2 8l4.4-1.6L8 2',
+  check:'m3 8 3 3 7-7', close:'m4 4 8 8M4 12l8-8', plus:'M8 3v10M3 8h10',
+  copy:'M6 6h8v8H6zM10 6V2H2v8h4',
+  warning:'m8 2 6.5 11.5h-13L8 2M8 6.5v3m0 2h.01',
+  info:'M14 8A6 6 0 1 1 2 8a6 6 0 0 1 12 0M8 7.5v4m0-7h.01',
+  clock:'M14 8A6 6 0 1 1 2 8a6 6 0 0 1 12 0M8 4.5V8l2.5 1.5',
+  history:'M2 2v4h4M2.5 6A6 6 0 1 1 2 8.5M8 5v3l2.5 1.5',
+  enter:'M13 3v6H3m3-3L3 9l3 3',
+  eye:'M1.5 8s2.5-4.5 6.5-4.5 6.5 4.5 6.5 4.5-2.5 4.5-6.5 4.5S1.5 8 1.5 8m8.5 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0',
+  eyeOff:'M2 2l12 12M6.5 6.6A2 2 0 0 0 9.4 9.5M4 4.6C2.5 5.7 1.5 8 1.5 8s2.5 4.5 6.5 4.5c1.2 0 2.3-.4 3.2-.9M7 3.6c.3 0 .7-.1 1-.1 4 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2',
+  lock:'M3 7h10v7H3zM5 7V5a3 3 0 0 1 6 0v2',
+  star:'m8 2 1.8 3.8 4.2.6-3 2.9.7 4.2L8 11.5l-3.7 2 .7-4.2-3-2.9 4.2-.6z',
+  user:'M11 13v-1.5a3 3 0 0 0-3-3 3 3 0 0 0-3 3V13M8 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5',
+  users:'M10 13v-1.2a2.5 2.5 0 0 0-2.5-2.5h-3A2.5 2.5 0 0 0 2 11.8V13m8-10.8a2.5 2.5 0 0 1 0 4.8m4 6v-1.2a2.5 2.5 0 0 0-2-2.4M8.5 5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0',
+  box:'m8 2 6 3-6 3-6-3 6-3M2 5v6l6 3 6-3V5M8 8v6',
+  layers:'m8 2 6 3-6 3-6-3 6-3M2 8l6 3 6-3M2 11l6 3 6-3',
+  dots:'M4 8h.01M8 8h.01M12 8h.01',
+  swap:'M3 5h9m-3-3 3 3-3 3m4 5H4m3 3-3-3 3-3',
+  key:'M9.5 2.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8M7 9l-5 5m2-2 1.5 1.5',
+  window:'M2 3h12v10H2zM2 6h12M4 4.5h.01M6 4.5h.01',
+  arrow:'M3 8h10M9 4l4 4-4 4',
+  hash:'M6 2 4 14M12 2l-2 12M2 6h12M2 10h12',
+  sun:'M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.4 3.4l.7.7M11.9 11.9l.7.7M3.4 12.6l.7-.7M11.9 4.1l.7-.7',
+  moon:'M13.5 9.5A6 6 0 0 1 6.5 2.5a6 6 0 1 0 7 7'
+};
+const icon = (n, cls = '') => `<svg class="icon ${cls}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[n] || paths.dots}"/></svg>`;
+
+/* ------------------------------------------------------------------ state */
+const STORAGE = 'ency-localizer-v2';
+let stored = {};
+try { stored = JSON.parse(localStorage.getItem(STORAGE) || '{}'); } catch {}
+const db = {
+  apps: Array.isArray(stored.apps) ? stored.apps : structuredClone(APPS),
+  languages: Array.isArray(stored.languages) ? stored.languages : structuredClone(LANGUAGES),
+  dealers: Array.isArray(stored.dealers) ? stored.dealers : structuredClone(DEALERS),
+  entries: stored.entries || {},
+  ignored: stored.ignored || {},
+  excludedModules: stored.excludedModules || ['GR32_portable'],
+  theme: stored.theme || 'dark'
+};
+let rows = makeRows(db.apps);
+const drafts = {}; // черновики живут только в сессии — сохраняется лишь применённый перевод
+
+const ME = 'Алексей Морозов';
+const PAGES = ['translations', 'progress', 'admin', 'guide'];
+const S = {
+  page: 'translations', app: 'CAM', lang: 'ru', version: '18.0',
+  status: 'all', module: 'all', query: '', mine: false, showIgnored: false,
+  selected: 'CAM.Toolpath.Calculate', tab: 'context',
+  role: 'admin', dealer: 'dealer-a',
+  openGroups: new Set(['ENCY']), editorOpen: false
+};
+
+let storageWarned = false;
+function persist() {
+  try { localStorage.setItem(STORAGE, JSON.stringify(db)); }
+  catch { if (!storageWarned) { storageWarned = true; toast('Память браузера недоступна: изменения живут до закрытия вкладки.', 'warning'); } }
+}
+
+/* ---------------------------------------------------------------- domain */
+const currentLanguage = () => db.languages.find(l => l.code === S.lang) || db.languages[0];
+const appById = id => db.apps.find(a => a.id === id);
+const key = (row, lang = S.lang, version = S.version) => entryKey(version, lang, row.id);
+const translation = (row, lang = S.lang, version = S.version) => db.entries[key(row, lang, version)] || initialTranslation(row, lang, version);
+const ignored = row => db.excludedModules.includes(row.module) || (Object.hasOwn(db.ignored, row.id) ? db.ignored[row.id] : row.ignored);
+const isAdmin = () => S.role === 'admin';
+const canEdit = (lang = S.lang) => isAdmin() || !!db.dealers.find(d => d.id === S.dealer)?.languages.includes(lang);
+const scopeRows = () => rows.filter(r => (S.app === 'all' || r.app === S.app) && (!S.mine || r.owner === ME));
+const source = row => sourceFor(row, S.version);
+const hasErrors = row => { const t = translation(row); return !!t.text && validate(source(row), t.text, db.dealers).some(c => !c.ok); };
+
+function filteredRows() {
+  const q = S.query.trim().toLowerCase();
+  return scopeRows().filter(r => {
+    const ig = ignored(r);
+    if (!S.showIgnored && ig && S.status !== 'ignored') return false;
+    if (S.status === 'ignored') { if (!ig) return false; }
+    else if (S.status === 'errors') { if (ig || !hasErrors(r)) return false; }
+    else if (S.status !== 'all' && (ig || translation(r).status !== S.status)) return false;
+    if (S.module !== 'all' && r.module !== S.module) return false;
+    if (q && ![r.id, r.code, source(r), translation(r).text, r.owner, r.context].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+const getStats = (list = scopeRows(), lang = S.lang) => stats(list, r => translation(r, lang), ignored);
+
+function commit(row, text, status = 'translated', author = ME) {
+  const old = translation(row);
+  db.entries[key(row)] = {text, status, history: [...(old.history || []), {text, status, author, date: new Date().toISOString()}]};
+  delete drafts[key(row)];
+}
+
+/* ------------------------------------------------------------ primitives */
+const statusBadge = (s, label) => `<span class="status status--${s}" title="${esc(STATUS[s]?.en || '')}">${esc(label ?? STATUS[s]?.label ?? s)}</span>`;
+const bar = st => `<span class="bar" role="img" aria-label="${st.percent}% переведено"><i class="b-translated" style="width:${st.total ? st.translated / st.total * 100 : 0}%"></i><i class="b-outdated" style="width:${st.total ? st.outdated / st.total * 100 : 0}%"></i><i class="b-auto" style="width:${st.total ? st.auto / st.total * 100 : 0}%"></i></span>`;
+const avatar = name => `<span class="avatar" style="--av:var(${avColor(name)})" title="${esc(name)}">${esc(initials(name))}</span>`;
+const dd = (id, label, options, extra = '') => `<label class="dd" ${extra}>${label ? `<span class="dd__label">${label}</span>` : ''}<select id="${id}" aria-label="${label || id}">${options}</select>${icon('down')}</label>`;
+const opt = (value, label, selected) => `<option value="${esc(value)}" ${selected ? 'selected' : ''}>${esc(label)}</option>`;
+const showNl = text => esc(text).replace(/\n/g, '<span class="nl">↵</span>\n');
+
+function toast(message, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast toast--' + type;
+  el.innerHTML = icon(type === 'success' ? 'check' : 'info') + `<span>${esc(message)}</span>`;
+  $('#toasts').append(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+/* ---------------------------------------------------------------- header */
+function header() {
+  const nav = [['translations', 'translate', 'Переводы'], ['progress', 'chart', 'Прогресс'], ['admin', 'shield', 'Администрирование'], ['guide', 'book', 'Руководство']];
+  const langs = db.languages.map(l => opt(l.code, `${l.name} (${l.native})`, S.lang === l.code)).join('');
+  return `<header class="header">
+    <a class="brand" href="#translations"><span class="brand__mark">${icon('translate')}</span><span class="brand__name">ENCY<small>Localizer</small></span></a>
+    <nav class="tabs" aria-label="Разделы">${nav.map(([id, i, label]) => `<button class="tabs__seg ${S.page === id ? 'is-active' : ''}" data-page="${id}">${icon(i)}<span>${label}</span></button>`).join('')}</nav>
+    <span class="header__sep"></span>
+    ${dd('version-select', 'Версия', ['17.0', '18.0'].map(v => opt(v, 'ENCY ' + v, S.version === v)).join(''))}
+    ${dd('language-select', 'Язык', langs)}
+    <span class="spacer"></span>
+    <button class="btn btn--ghost" data-act="profile" title="Роль в прототипе">${avatar(ME)}<span>${isAdmin() ? 'Администратор' : 'Переводчик · ' + esc(db.dealers.find(d => d.id === S.dealer)?.name || '')}</span>${icon('down')}</button>
+    <button class="ibtn ibtn--24" data-act="theme" title="Светлая / тёмная тема">${icon(db.theme === 'dark' ? 'sun' : 'moon')}</button>
+    <button class="btn btn--primary" data-act="export">${icon('download')}<span>Скачать .lng</span></button>
+  </header>`;
+}
+
+/* ------------------------------------------------------ translations page */
+const GROUPS = ['ENCY', 'Инструменты', 'Сервисы', 'Tuner', 'Другие'];
+
+function appsTree() {
+  const all = getStats(rows.filter(r => !S.mine || r.owner === ME));
+  return `<aside class="panel panel--tree"><div class="panel__head"><span class="panel__title">Приложения<span class="panel__count">${db.apps.length}</span></span><span class="spacer"></span>
+    <label class="tgl" title="Только строки, за которые отвечаю я"><input type="checkbox" id="mine-toggle" ${S.mine ? 'checked' : ''}><span class="tgl__track"></span><span>Мои</span></label></div>
+    <div class="panel__body tree">
+      <button class="trow trow--all ${S.app === 'all' ? 'is-selected' : ''}" data-app="all">${icon('layers')}<span class="trow__name">Все приложения</span><span class="pct">${all.percent}%</span></button>
+      ${GROUPS.map(g => {
+        const apps = db.apps.filter(a => a.group === g);
+        if (!apps.length) return '';
+        const open = S.openGroups.has(g) || apps.some(a => a.id === S.app);
+        const gst = getStats(rows.filter(r => apps.some(a => a.id === r.app) && (!S.mine || r.owner === ME)));
+        return `<div class="tree__group ${open ? 'is-open' : ''}" data-group="${esc(g)}">${icon('right')}<span>${esc(g)}</span><span class="pct">${gst.percent}%</span></div>
+        ${open ? apps.map(a => { const st = getStats(rows.filter(r => r.app === a.id && (!S.mine || r.owner === ME))); return `<button class="trow ${S.app === a.id ? 'is-selected' : ''}" data-app="${esc(a.id)}" title="${esc(a.id)} · ${esc(a.description)}">
+          <span class="trow__name">${esc(a.name)}</span>${bar(st)}<span class="pct">${st.percent}%</span></button>`; }).join('') : ''}`;
+      }).join('')}
+    </div></aside>`;
+}
+
+function stringsPanel() {
+  const st = getStats();
+  const errors = scopeRows().filter(r => !ignored(r) && hasErrors(r)).length;
+  const list = filteredRows();
+  const app = appById(S.app);
+  const chips = [['all', 'Все', st.total, ''], ['untranslated', 'Без перевода', st.untranslated, '--st-untranslated'], ['auto', 'Автоперевод', st.auto, '--st-auto'], ['outdated', 'Устарело', st.outdated, '--st-outdated'], ['translated', 'Переведено', st.translated, '--st-translated'], ['errors', 'С ошибками', errors, '--st-error'], ['ignored', 'Ignored', st.ignored, '']];
+  return `<section class="panel panel--strings">
+    <div class="panel__head"><span class="panel__title">${esc(app ? app.name : 'Все приложения')}${app ? `<span class="panel__count">${esc(app.id)}</span>` : ''}</span>
+      <span class="tag">${esc(currentLanguage().tag)} · ENCY ${esc(S.version)}</span><span class="spacer"></span>
+      <span class="pct" title="Доля Translated среди строк без Ignored">${st.percent}% · ${fmt(st.translated)} из ${fmt(st.total)}</span>
+      <button class="btn" data-act="autotranslate" ${!canEdit() ? 'disabled' : ''} title="Предложить автоперевод для строк без перевода">${icon('sparkles')}<span>Автоперевод</span></button></div>
+    <div class="toolbar">
+      <label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Ключ, текст, перевод, ответственный" autocomplete="off"><kbd>/</kbd></label>
+      ${dd('module-select', 'Модуль', [opt('all', 'Все модули', S.module === 'all'), ...Object.entries(MODULES).map(([id, m]) => opt(id, m.label, S.module === id))].join(''))}
+      <span class="toolbar__sep"></span>
+      ${chips.map(([id, label, n, dot]) => `<button class="fchip ${S.status === id ? 'is-active' : ''}" data-status="${id}">${dot ? `<span class="fchip__dot" style="--dot:var(${dot})"></span>` : ''}${label}<span class="fchip__n">${n}</span></button>`).join('')}
+      ${S.status !== 'all' || S.module !== 'all' || S.query || S.mine ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}
+    </div>
+    <div class="panel__body" id="strings-list">
+      <div class="grid-head"><span>English <small>эталон</small></span><span class="col-tr">${esc(currentLanguage().name)}</span><span class="col-meta">Модуль</span><span class="col-owner">Ответственный</span><span>Статус</span></div>
+      ${list.length ? list.map(r => stringRow(r)).join('') : `<div class="empty-state">${icon('search')}<b>Строки не найдены</b><span>Измените запрос или фильтры</span></div>`}
+    </div>
+    <div class="panel__foot"><span>${fmt(list.length)} строк${st.ignored ? ` · ${st.ignored} ignored` : ''}</span><span class="spacer"></span><span><kbd>J</kbd>/<kbd>K</kbd> строки · <kbd>Ctrl ↵</kbd> применить</span></div>
+  </section>`;
+}
+
+function stringRow(r) {
+  const t = translation(r), ig = ignored(r), err = !ig && hasErrors(r);
+  const nl = (source(r).match(/\n/g) || []).length;
+  return `<button class="srow ${S.selected === r.id ? 'is-selected' : ''} ${ig ? 'is-ignored' : ''}" data-row="${esc(r.id)}" title="${esc(r.id)}">
+    <span class="srow__src"><span class="ellipsis">${esc(source(r).replace(/\n/g, ' ↵ '))}</span>${nl ? `<span class="srow__nl" title="Переносы строк">↵${nl}</span>` : ''}</span>
+    <span class="srow__tr">${t.text ? `<span class="ellipsis">${esc(t.text.replace(/\n/g, ' ↵ '))}</span>` : '<span class="empty">—</span>'}${err ? `<span class="srow__warn" title="Есть ошибки проверки">${icon('warning')}</span>` : ''}</span>
+    <span class="srow__meta"><span class="ellipsis">${esc(MODULES[r.module]?.label || r.module)}</span></span>
+    <span class="srow__owner ${r.owner === ME ? 'is-me' : ''}">${avatar(r.owner)}<span class="ellipsis">${esc(r.owner)}</span></span>
+    <span>${ig ? statusBadge('ignored', 'Ignored') : statusBadge(t.status)}</span>
+  </button>`;
+}
+
+function inspector() {
+  const row = rows.find(r => r.id === S.selected);
+  if (!row) return `<aside class="panel panel--insp"><div class="panel__head"><span class="panel__title">Строка</span></div><div class="empty-state">${icon('translate')}<b>Выберите строку</b><span>Слева — список, здесь — перевод и контекст</span></div></aside>`;
+  const t = translation(row), ig = ignored(row), text = drafts[key(row)] ?? t.text, edit = canEdit() && !ig;
+  const checks = validate(source(row), text, db.dealers);
+  const matches = rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row));
+  const app = appById(row.app);
+  const dirty = text !== t.text;
+  return `<aside class="panel panel--insp">
+    <div class="panel__head"><span class="panel__title">Строка</span><span class="spacer"></span>
+      <button class="ibtn" data-act="previous" title="Предыдущая (K)">${icon('up')}</button><button class="ibtn" data-act="next" title="Следующая (J)">${icon('down')}</button>
+      <button class="ibtn" data-act="close-editor" title="Закрыть">${icon('close')}</button></div>
+    <div class="insp"><div class="insp__scroll">
+      <div class="trow-title"><span class="ellipsis" title="${esc(row.code)}">${esc(row.code)}</span>${ig ? statusBadge('ignored', 'Ignored') : statusBadge(t.status)}</div>
+      <div class="irow"><span class="irow__label">Ключ</span><span class="irow__val"><code class="ellipsis">${esc(row.id)}</code><button class="ibtn" data-act="copy-key" title="Скопировать ключ">${icon('copy')}</button></span></div>
+      <div class="irow"><span class="irow__label">Приложение</span><span class="irow__val"><span class="ellipsis">${esc(app?.name || row.app)} <span class="muted">${esc(row.app)}</span></span></span></div>
+      <div class="irow"><span class="irow__label">Модуль</span><span class="irow__val"><span class="tag">${esc(MODULES[row.module]?.label || row.module)}</span><span class="muted ellipsis">${esc(row.context)}</span></span></div>
+      <div class="irow"><span class="irow__label">Ответственный</span><span class="irow__val">${avatar(row.owner)}<span class="ellipsis">${esc(row.owner)}</span>${row.owner === ME ? '<span class="tag tag--green">вы</span>' : ''}</span></div>
+      <div class="irow"><span class="irow__label">Ignored</span><span class="irow__val"><label class="tgl" title="Строку переводить не нужно: технический идентификатор, ось, формула"><input type="checkbox" id="ignore-toggle" ${ig ? 'checked' : ''} ${!isAdmin() || db.excludedModules.includes(row.module) ? 'disabled' : ''}><span class="tgl__track"></span><span>${db.excludedModules.includes(row.module) ? 'модуль исключён' : ig ? 'не переводить' : 'переводить'}</span></label>${row.reason && ig ? `<span class="muted">· ${esc(row.reason)}</span>` : ''}</span></div>
+
+      <div class="sect"><div class="sect__head"><span class="lang">EN</span><b>Эталон</b><button class="ibtn" data-act="copy-source" title="Скопировать">${icon('copy')}</button></div>
+        <div class="srcbox">${showNl(source(row))}</div>
+        ${t.status === 'outdated' && row.previousSource && S.version === '18.0' ? `<div class="notice notice--amber">${icon('history')}<span>Эталон изменился в 18.0. Было: <del>${esc(row.previousSource)}</del>. Проверьте перевод и подтвердите.</span></div>` : ''}
+        ${row.note ? `<div class="notice">${icon('info')}<span>${esc(row.note)}</span></div>` : ''}</div>
+
+      <div class="sect"><div class="sect__head"><span class="lang is-target">${esc(currentLanguage().tag)}</span><b>${esc(currentLanguage().name)}</b>${dirty ? '<span class="tag tag--amber">черновик</span>' : ''}</div>
+        <div class="editor"><textarea id="translation-input" rows="3" lang="${esc(S.lang)}" spellcheck="true" placeholder="${edit ? 'Введите перевод…' : '—'}" ${edit ? '' : 'disabled'}>${esc(text)}</textarea>
+          <div class="editor__tools">
+            <button class="ibtn" data-act="insert-newline" title="Вставить перенос строки (Shift+Enter)" ${edit ? '' : 'disabled'}>${icon('enter')}</button>
+            <button class="ibtn" data-act="suggest" title="Подставить автоперевод" ${edit ? '' : 'disabled'}>${icon('sparkles')}</button>
+            <button class="ibtn" data-act="copy-source-to" title="Скопировать эталон в перевод" ${edit ? '' : 'disabled'}>${icon('arrow')}</button>
+            <span class="spacer"></span><small id="char-count">${text.length} симв.</small></div></div>
+        ${t.status === 'auto' && !dirty ? `<div class="notice notice--blue">${icon('sparkles')}<span>Автоперевод. Проверьте смысл и подтвердите — иначе строка не попадёт в .lng.</span></div>` : ''}
+        ${!canEdit() ? `<div class="notice">${icon('lock')}<span>Язык доступен вашей компании только для чтения. Доступ выдаёт администратор.</span></div>` : ''}
+        <div class="checks" id="validation-checks">${renderChecks(checks)}</div></div>
+
+      <div class="sect"><div class="seg" role="tablist">${[['context', 'Контекст'], ['matches', 'Совпадения', matches.length], ['history', 'История', t.history.length]].map(([id, label, n]) => `<button role="tab" class="${S.tab === id ? 'is-active' : ''}" data-tab="${id}">${label}${n !== undefined ? `<small>${n}</small>` : ''}</button>`).join('')}</div>
+        ${inspectorTab(row, t, matches)}</div>
+    </div>
+    <div class="insp__foot">${ig
+      ? `<button class="btn btn--wide" data-act="ignore" ${!isAdmin() || db.excludedModules.includes(row.module) ? 'disabled' : ''}>Вернуть в перевод</button>`
+      : `<div class="row"><button class="btn btn--primary" id="apply-button" data-act="apply" ${!edit || checks.some(c => !c.ok) ? 'disabled' : ''}>${icon('check')}Применить<kbd>Ctrl ↵</kbd></button><button class="btn btn--secondary" data-act="apply-next" ${!edit || checks.some(c => !c.ok) ? 'disabled' : ''}>Применить и далее</button></div>
+         ${matches.length ? `<button class="btn btn--wide" data-act="apply-matches" ${!edit || !text.trim() ? 'disabled' : ''}>${icon('copy')}Перевести так же ещё ${matches.length} ${plural(matches.length, 'строку', 'строки', 'строк')}</button>` : ''}`}
+    </div></div></aside>`;
+}
+const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 10 || h >= 20) ? b : c; };
+const renderChecks = checks => checks.map(c => `<div class="check ${c.ok ? 'ok' : 'fail'}">${icon(c.ok ? 'check' : 'warning')}<span>${esc(c.label)}</span></div>`).join('');
+
+function inspectorTab(row, t, matches) {
+  if (S.tab === 'history') {
+    if (!t.history.length) return `<p class="muted">Перевод ещё не применялся.</p>`;
+    return `<div class="hist">${[...t.history].reverse().map(h => `<div class="hist__e">${avatar(h.author)}<div><div class="hist__meta"><b>${esc(h.author)}</b><span>${new Date(h.date).toLocaleString('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>${statusBadge(h.status)}</div><div class="hist__text">${esc(h.text)}</div></div></div>`).join('')}</div>`;
+  }
+  if (S.tab === 'matches') {
+    if (!matches.length) return `<p class="muted">Такой же исходной строки в других местах нет.</p>`;
+    return `<p class="muted">Одинаковый эталон в ${matches.length} ${plural(matches.length, 'строке', 'строках', 'строках')}. Кнопка внизу применит текущий перевод ко всем отмеченным.</p>
+      ${matches.map(r => { const mt = translation(r); return `<label class="match"><input type="checkbox" class="ck" name="match-id" value="${esc(r.id)}" ${accepted(mt.status) ? '' : 'checked'}><span class="ellipsis" title="${esc(r.id)}">${esc(appById(r.app)?.name || r.app)} · ${esc(r.code)}</span>${statusBadge(mt.status)}</label>`; }).join('')}`;
+  }
+  return `<button class="win" data-act="context" title="Открыть схему окна"><div class="win__bar"><i></i><i></i><i></i><span>${esc(appById(row.app)?.name || row.app)} — ${esc(row.context.split(' → ')[0])}</span></div>
+    <div class="win__body"><div class="win__row"><span>${esc(row.context.split(' → ')[1] || 'Параметр')}</span><span class="win__ctl is-hl">${esc(source(row).split('\n')[0])}</span></div><div class="win__row"><span>Значение</span><span class="win__ctl"></span></div><div class="win__row"><span>Режим</span><span class="win__ctl"></span></div><div class="win__btns"><span>OK</span><span>Cancel</span></div></div></button>
+    <p class="muted">Схема окна показывает, где строка появится в интерфейсе. В производственной версии здесь снимок окна ENCY, привязанный к ключу.</p>`;
+}
+
+function translationsPage() {
+  return `<div class="workspace workspace--rows">${appsTree()}${stringsPanel()}${inspector()}</div>`;
+}
+
+/* ---------------------------------------------------------- progress page */
+function progressPage() {
+  return `<div class="workspace"><div class="page">
+    <div class="cards">${db.languages.map(l => { const st = getStats(rows, l.code); const editors = db.dealers.filter(d => d.languages.includes(l.code)); return `<button class="card" data-open-lang="${esc(l.code)}">
+      <div class="card__head"><span class="card__tag">${esc(l.tag)}</span><div><div class="card__title">${esc(l.name)}</div><div class="card__sub">${esc(l.native)} · ${editors.length ? editors.map(d => esc(d.name)).join(', ') : 'переводчики не назначены'}</div></div></div>
+      <div class="card__big">${st.percent}<small>%</small></div>${bar(st)}
+      <div class="card__legend"><span><b>${fmt(st.translated)}</b> переведено</span><span><b>${fmt(st.outdated)}</b> устарело</span><span><b>${fmt(st.auto)}</b> авто</span><span><b>${fmt(st.untranslated)}</b> без перевода</span></div></button>`; }).join('')}</div>
+    <section class="panel"><div class="panel__head"><span class="panel__title">Прогресс по приложениям<span class="panel__count">ENCY ${esc(S.version)}</span></span><span class="spacer"></span><span class="muted">В процент входят только Translated. Ignored исключены из знаменателя. Нажмите на процент, чтобы открыть строки.</span></div>
+      <div class="panel__body"><table class="table"><thead><tr><th>Приложение</th><th>Группа</th><th class="num">Строк</th>${db.languages.map(l => `<th class="num">${esc(l.tag)}</th>`).join('')}</tr></thead><tbody>
+        ${db.apps.map(a => { const list = rows.filter(r => r.app === a.id); return `<tr><td><span class="cell-app">${esc(a.name)}<small>${esc(a.id)}</small></span></td><td class="muted">${esc(a.group)}</td><td class="num">${fmt(getStats(list).total)}</td>${db.languages.map(l => { const st = getStats(list, l.code); return `<td class="num"><span class="cell-pct">${bar(st)}<button data-progress-app="${esc(a.id)}" data-progress-lang="${esc(l.code)}">${st.percent}%</button></span></td>`; }).join('')}</tr>`; }).join('')}
+      </tbody></table></div></section>
+  </div></div>`;
+}
+
+/* ------------------------------------------------------------- admin page */
+function adminPage() {
+  const ro = !isAdmin();
+  return `<div class="workspace"><div class="page page--narrow">
+    ${ro ? `<div class="notice">${icon('lock')}<span>Вы смотрите раздел как переводчик. Изменения доступны администратору — переключите роль в шапке.</span></div>` : ''}
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Компании и доступ к языкам<span class="panel__count">${db.dealers.length}</span></span><span class="spacer"></span><button class="btn" data-act="add-dealer" ${ro ? 'disabled' : ''}>${icon('plus')}Компания</button></div>
+      <div class="panel__body"><p class="muted" style="margin-bottom:6px">Один язык могут переводить несколько компаний, одна компания — несколько языков. Отметьте языки прямо в таблице.</p>
+      <table class="table"><thead><tr><th>Компания</th><th>Регион</th><th class="num">Участники</th><th>Языки для перевода</th></tr></thead><tbody>
+        ${db.dealers.map(d => `<tr><td><span class="cell-app">${avatar(d.name)}${esc(d.name)}</span></td><td class="muted">${esc(d.region)}</td><td class="num">${d.people}</td><td><span class="cell-langs">${db.languages.map(l => `<label class="${d.languages.includes(l.code) ? 'is-on' : ''}"><input type="checkbox" class="ck" data-access="${esc(d.id)}" value="${esc(l.code)}" ${d.languages.includes(l.code) ? 'checked' : ''} ${ro ? 'disabled' : ''}>${esc(l.tag)}</label>`).join('')}</span></td></tr>`).join('')}
+      </tbody></table></div></section>
+
+    <div class="split">
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Языки<span class="panel__count">${db.languages.length}</span></span><span class="spacer"></span><button class="btn" data-act="add-language" ${ro ? 'disabled' : ''}>${icon('plus')}Язык</button></div>
+      <div class="panel__body"><table class="table"><thead><tr><th>Код</th><th>Название</th><th class="num">Готовность</th></tr></thead><tbody>
+        ${db.languages.map(l => { const st = getStats(rows, l.code); return `<tr><td class="mono">${esc(l.code)}</td><td>${esc(l.name)} <span class="muted">${esc(l.native)}</span></td><td class="num"><span class="cell-pct">${bar(st)}<button data-open-lang="${esc(l.code)}">${st.percent}%</button></span></td></tr>`; }).join('')}
+      </tbody></table></div></section>
+
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Приложения<span class="panel__count">${db.apps.length}</span></span><span class="spacer"></span><button class="btn" data-act="add-app" ${ro ? 'disabled' : ''}>${icon('plus')}Приложение</button></div>
+      <div class="panel__body" style="max-height:320px;overflow:auto"><table class="table"><thead><tr><th>Приложение</th><th>Группа</th><th>Ответственный</th></tr></thead><tbody>
+        ${db.apps.map(a => `<tr><td><span class="cell-app">${esc(a.name)}<small>${esc(a.id)}</small></span></td><td class="muted">${esc(a.group)}</td><td><span class="cell-app">${avatar(a.owner)}${esc(a.owner)}</span></td></tr>`).join('')}
+      </tbody></table></div></section>
+    </div>
+
+    <div class="split">
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Перенос переводов</span></div>
+      <div class="panel__body prose">
+        <p><b>Между приложениями.</b> Перевод копируется по совпадению ключа ресурса из одного .lng в другой. Подтверждённые строки в приёмнике по умолчанию защищены.</p>
+        <button class="btn" data-act="copy-translations" ${ro ? 'disabled' : ''}>${icon('copy')}Скопировать перевод между приложениями</button>
+        <p style="margin-top:12px"><b>Между версиями 17.0 → 18.0.</b> Если эталон не изменился, статус сохраняется. Если английская строка изменилась, перевод переносится как <b>Outdated</b>. Автоперевод не переносится.</p>
+        <button class="btn" data-act="migrate" ${ro ? 'disabled' : ''}>${icon('swap')}Перенести 17.0 → 18.0</button>
+      </div></section>
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Исключаемые модули</span><span class="spacer"></span><button class="btn" data-act="exclusions" ${ro ? 'disabled' : ''}>Изменить</button></div>
+      <div class="panel__body prose"><p>Строки этих модулей получают статус Ignored автоматически, не переводятся и не попадают в .lng.</p>
+        <p>${db.excludedModules.map(m => `<span class="tag">${esc(m)}</span>`).join(' ')}</p>
+        <p class="muted">Отдельные строки (оси Rx/Ry, формулы, идентификаторы вида StPanel) отмечаются флагом Ignored в инспекторе строки.</p></div></section>
+    </div>
+  </div></div>`;
+}
+
+/* ------------------------------------------------------------- guide page */
+function guidePage() {
+  return `<div class="workspace"><div class="page page--narrow">
+    <div class="split">
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Первый перевод за пять шагов</span></div><div class="panel__body"><ol class="steps">
+      <li><div><b>Выберите версию и язык в шапке</b><p>Слева — приложения по группам с готовностью. Тумблер «Мои» оставляет только строки, за которые отвечаете вы.</p></div></li>
+      <li><div><b>Найдите строку</b><p>Поиск идёт по ключу, эталону, переводу и ответственному. Кнопки OK/Cancel ищите по ключу, а не по тексту. Чипы фильтруют по статусу, список «Модуль» — по типу: формы, XML, подсказки.</p></div></li>
+      <li><div><b>Переведите в инспекторе справа</b><p>Проверки срабатывают на ходу: параметры %s/%d, число переносов строк, контакты и названия дилеров. Перенос строки — кнопка ↵ или Shift+Enter. Орфографию подчёркивает браузер.</p></div></li>
+      <li><div><b>Примените</b><p>Ctrl+Enter. «Применить и далее» переходит к следующей строке. Если такой же эталон встречается ещё где-то, кнопка «Перевести так же» закрывает все одинаковые строки за раз.</p></div></li>
+      <li><div><b>Скачайте .lng</b><p>В файл попадают только Translated и Outdated. Скопируйте его в папку Languages и проверьте в приложении.</p></div></li>
+    </ol></div></section>
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Статусы строк</span></div><div class="panel__body">
+      ${[['translated', 'Переведено и подтверждено. Попадает в .lng.'], ['outdated', 'Перевод есть, но английский эталон изменился. Попадает в .lng, требует подтверждения.'], ['untranslated', 'Перевода нет, автоперевод ещё не предложен.'], ['auto', 'Переведено автоматически по контексту CAM/CAD и ранее подтверждённым строкам. В .lng не попадает до подтверждения.']].map(([s, d]) => `<div class="kv"><span class="kv__k">${statusBadge(s)}</span><span class="kv__v">${d}</span></div>`).join('')}
+      <div class="kv"><span class="kv__k">${statusBadge('ignored', 'Ignored')}</span><span class="kv__v">Переводить не нужно: технический идентификатор, обозначение оси, формула. Не считается в проценте, не экспортируется.</span></div>
+    </div></section>
+    </div>
+
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Перенос между версиями</span></div><div class="panel__body prose">
+      <p>Переводы сопоставляются по приложению и ключу. Если эталон в новой версии совпадает со старым, перевод и статус сохраняются. Если эталон изменился, перевод приходит как <b>Outdated</b>: он остаётся в .lng, но помечен к проверке, а в инспекторе видно старый эталон. Автоперевод и пустые строки не переносятся: в новой версии они получают статус «Без перевода» и уходят в очередь автоперевода.</p>
+    </div></section>
+
+    <section class="panel panel--static"><div class="panel__head"><span class="panel__title">Перевод из интерфейса ENCY и Tuner</span><span class="spacer"></span><span class="tag">проект публичного API</span></div><div class="panel__body prose">
+      <p>Сценарий: пользователь наводит курсор на элемент в ENCY и нажимает сочетание клавиш. Открывается окно: слева эталон на английском, справа поле перевода. Кнопка «Отправить» вызывает API локализатора с токеном пользователя; после перезапуска приложения перевод применяется. Правила проверок и прав те же, что на сайте.</p>
+      <table class="table"><thead><tr><th>Метод</th><th>Ресурс</th><th>Назначение</th></tr></thead><tbody>
+        <tr><td><code>GET</code></td><td><code>/api/v1/strings?app=&key=&version=&language=</code></td><td>Эталон, текущий перевод, статус, ответственный</td></tr>
+        <tr><td><code>PUT</code></td><td><code>/api/v1/strings/{app}/{key}/{language}</code></td><td>Применить перевод; ответ 422 с кодами ошибок проверок</td></tr>
+        <tr><td><code>GET</code></td><td><code>/api/v1/export/{app}/{language}.lng</code></td><td>Скачать актуальный .lng</td></tr>
+        <tr><td><code>POST</code></td><td><code>/api/v1/auth/token</code></td><td>Токен доступа; права определяются компанией и её языками</td></tr>
+      </tbody></table>
+      <p class="muted">Планируется: уведомление разработчику, когда его строки попали в локализатор, и определение автора строки по истории репозитория.</p>
+    </div></section>
+    <p class="muted">Все переводы являются собственностью ENCY Software / Спрут Технологии. Прототип: данные демонстрационные и хранятся в этом браузере.</p>
+  </div></div>`;
+}
+
+/* ---------------------------------------------------------------- render */
+function render() {
+  const active = document.activeElement, focusedId = active?.id, start = active?.selectionStart, end = active?.selectionEnd;
+  const listScroll = $('#strings-list')?.scrollTop || 0, inspScroll = $('.insp__scroll')?.scrollTop || 0;
+  document.documentElement.dataset.theme = db.theme;
+  const app = $('#app');
+  app.className = 'app' + (S.editorOpen ? ' is-editor-open' : '');
+  app.innerHTML = header() + ({translations: translationsPage, progress: progressPage, admin: adminPage, guide: guidePage}[S.page] || translationsPage)();
+  if (focusedId && $('#' + focusedId)) { const el = $('#' + focusedId); el.focus({preventScroll: true}); if (typeof start === 'number' && el.setSelectionRange) try { el.setSelectionRange(start, end); } catch {} }
+  if ($('#strings-list')) $('#strings-list').scrollTop = listScroll;
+  if ($('.insp__scroll')) $('.insp__scroll').scrollTop = inspScroll;
+  document.title = 'ENCY Localizer — ' + {translations: 'Переводы', progress: 'Прогресс', admin: 'Администрирование', guide: 'Руководство'}[S.page];
+}
+
+/* ----------------------------------------------------------------- modal */
+let modalReturnFocus = null;
+function openModal(title, body, footer = '') {
+  modalReturnFocus = document.activeElement;
+  const modal = $('#modal');
+  modal.innerHTML = `<div class="modal__head"><h2 id="modal-title">${title}</h2><button class="ibtn ibtn--24" data-act="close-modal" aria-label="Закрыть">${icon('close')}</button></div><div class="modal__body">${body}</div>${footer ? `<div class="modal__foot">${footer}</div>` : ''}`;
+  if (!modal.open) modal.showModal();
+}
+function closeModal() { $('#modal').close(); modalReturnFocus?.isConnected && modalReturnFocus.focus(); }
+const cancelBtn = '<button class="btn" data-act="close-modal">Отмена</button>';
+const submitBtn = (form, label) => `<button class="btn btn--primary" type="submit" form="${form}">${label}</button>`;
+const fld = (label, control, help = '') => `<div class="kv"><span class="kv__k">${label}</span><span class="kv__v">${control}${help ? `<small>${help}</small>` : ''}</span></div>`;
+const input = (name, attrs = '') => `<label class="field"><input name="${name}" ${attrs}></label>`;
+const select = (name, options) => `<label class="dd"><select name="${name}">${options}</select>${icon('down')}</label>`;
+const langOptions = (sel = S.lang) => db.languages.map(l => opt(l.code, l.name, l.code === sel)).join('');
+const appOptions = (sel = S.app) => GROUPS.map(g => { const a = db.apps.filter(x => x.group === g); return a.length ? `<optgroup label="${esc(g)}">${a.map(x => opt(x.id, `${x.name} (${x.id})`, x.id === sel)).join('')}</optgroup>` : ''; }).join('');
+function adminOnly() { if (isAdmin()) return true; toast('Это действие доступно администратору.', 'warning'); return false; }
+
+/* --------------------------------------------------------------- actions */
+const editorRow = () => rows.find(r => r.id === S.selected);
+const currentDraft = (row = editorRow()) => row ? (drafts[key(row)] ?? translation(row).text) : '';
+
+function updateDraft(text) {
+  const row = editorRow(); if (!row) return;
+  drafts[key(row)] = text;
+  const checks = validate(source(row), text, db.dealers);
+  if ($('#validation-checks')) $('#validation-checks').innerHTML = renderChecks(checks);
+  if ($('#char-count')) $('#char-count').textContent = text.length + ' симв.';
+  const bad = checks.some(c => !c.ok);
+  $('#apply-button, [data-act="apply-next"]').forEach(b => { b.disabled = bad; });
+  const m = $('[data-act="apply-matches"]'); if (m) m.disabled = !text.trim();
+}
+function applyCurrent(next = false) {
+  const row = editorRow(); if (!row || !canEdit() || ignored(row)) return;
+  const text = currentDraft(row), checks = validate(source(row), text, db.dealers);
+  if (checks.some(c => !c.ok)) { toast(checks.find(c => !c.ok).label, 'warning'); return; }
+  commit(row, text); persist();
+  if (next) moveRow(1); else render();
+  toast('Перевод применён. Строка попадёт в .lng.');
+}
+function moveRow(delta) {
+  const list = filteredRows(); if (!list.length) return;
+  const i = list.findIndex(r => r.id === S.selected);
+  S.selected = list[(Math.max(0, i) + delta + list.length) % list.length].id;
+  render();
+  $(`[data-row="${CSS.escape(S.selected)}"]`)?.scrollIntoView({block: 'nearest'});
+}
+function goApp(id, lang) {
+  S.page = 'translations'; S.app = id; if (lang) S.lang = lang;
+  S.status = 'all'; S.query = ''; S.module = 'all'; S.showIgnored = false;
+  S.selected = rows.find(r => (id === 'all' || r.app === id) && !ignored(r))?.id;
+  location.hash = 'translations'; render();
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast('Скопировано'); }
+  catch { openModal('Скопировать', `<textarea class="form" readonly rows="3" style="width:100%">${esc(text)}</textarea>`, '<button class="btn btn--primary" data-act="close-modal">Готово</button>'); }
+}
+function download(name, content) {
+  const blob = new Blob(['\uFEFF', content], {type: 'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function applyBatch(list, textProvider) {
+  let done = 0, skipped = 0;
+  for (const row of list) {
+    const text = textProvider(row);
+    if (ignored(row) || !text || validate(source(row), text, db.dealers).some(c => !c.ok)) { skipped++; continue; }
+    commit(row, text); done++;
+  }
+  persist(); closeModal(); render();
+  toast(`Применено: ${done}${skipped ? `, пропущено с ошибками: ${skipped}` : ''}`);
+}
+
+function action(name) {
+  const row = editorRow();
+  switch (name) {
+    case 'close-modal': closeModal(); return;
+    case 'close-editor': S.editorOpen = false; render(); return;
+    case 'theme': db.theme = db.theme === 'dark' ? 'light' : 'dark'; persist(); render(); return;
+    case 'apply': applyCurrent(); return;
+    case 'apply-next': applyCurrent(true); return;
+    case 'next': moveRow(1); return;
+    case 'previous': moveRow(-1); return;
+    case 'copy-key': if (row) copy(row.id); return;
+    case 'copy-source': if (row) copy(source(row)); return;
+    case 'copy-source-to': if (row && canEdit()) { updateDraft(source(row)); render(); } return;
+    case 'insert-newline': {
+      const el = $('#translation-input'); if (!el || el.disabled) return;
+      const s = el.selectionStart, e = el.selectionEnd;
+      el.value = el.value.slice(0, s) + '\n' + el.value.slice(e); updateDraft(el.value); el.focus(); el.setSelectionRange(s + 1, s + 1); return;
+    }
+    case 'suggest': {
+      if (!row || !canEdit() || ignored(row)) return;
+      const s = row.suggestions[S.lang];
+      if (!s) { toast('В демо-словаре нет варианта для этого языка.', 'warning'); return; }
+      updateDraft(s); render(); toast('Автоперевод подставлен в черновик. Проверьте и примените.'); return;
+    }
+    case 'reset-filters': S.query = ''; S.status = 'all'; S.module = 'all'; S.mine = false; S.showIgnored = false; render(); return;
+    case 'ignore': if (!adminOnly() || !row) return; db.ignored[row.id] = !ignored(row); delete drafts[key(row)]; persist(); render(); toast(ignored(row) ? 'Строка исключена из перевода и экспорта' : 'Строка возвращена в перевод'); return;
+    case 'export': {
+      const list = rows.filter(r => S.app === 'all' || r.app === S.app), st = getStats(list);
+      openModal('Скачать .lng', `<div class="kv"><span class="kv__k">Файл</span><span class="kv__v"><code>${esc(S.app === 'all' ? 'ENCY' : S.app.replaceAll(' ', '_'))}_${esc(S.lang)}_${esc(S.version)}.lng</code></span></div>
+        <div class="kv"><span class="kv__k">В файл попадут</span><span class="kv__v">${statusBadge('translated')} ${fmt(st.translated)} &nbsp; ${statusBadge('outdated')} ${fmt(st.outdated)}</span></div>
+        <div class="kv"><span class="kv__k">Не попадут</span><span class="kv__v">${statusBadge('auto')} ${fmt(st.auto)} &nbsp; ${statusBadge('untranslated')} ${fmt(st.untranslated)} &nbsp; ${statusBadge('ignored', 'Ignored')} ${fmt(st.ignored)}</span></div>
+        <p class="muted">Скопируйте файл в папку Languages приложения для проверки. Формат демонстрационный: UTF-8 BOM, секции по приложениям, переносы экранированы как \\n.</p>`,
+        cancelBtn + `<button class="btn btn--primary" data-act="download-lng">${icon('download')}Скачать ${fmt(st.exportable)} строк</button>`);
+      return;
+    }
+    case 'download-lng': {
+      const out = exportLng(rows.filter(r => S.app === 'all' || r.app === S.app), r => translation(r), ignored, S.version, S.lang);
+      download(`${S.app === 'all' ? 'ENCY' : S.app.replaceAll(' ', '_')}_${S.lang}_${S.version}.lng`, out.content); closeModal(); toast(`Выгружено ${out.count} строк`); return;
+    }
+    case 'autotranslate': {
+      if (!canEdit()) return;
+      const avail = scopeRows().filter(r => !ignored(r) && translation(r).status === 'untranslated');
+      openModal('Автоперевод', `<p>Для ${avail.length} строк без перевода будет предложен вариант с учётом контекста CAM/CAD и ранее подтверждённых переводов.</p><p>Строки получат статус ${statusBadge('auto')} и не попадут в .lng до подтверждения переводчиком.</p><p class="muted">В прототипе используется заранее подготовленный словарь. В производственной версии новые эталонные строки ставятся в очередь автоперевода автоматически.</p>`,
+        cancelBtn + `<button class="btn btn--primary" data-act="run-autotranslate" ${avail.length ? '' : 'disabled'}>${icon('sparkles')}Предложить переводы</button>`);
+      return;
+    }
+    case 'run-autotranslate': {
+      if (!canEdit()) return; let n = 0;
+      for (const r of scopeRows()) if (!ignored(r) && translation(r).status === 'untranslated' && r.suggestions[S.lang]) { commit(r, r.suggestions[S.lang], 'auto', 'Автоперевод'); n++; }
+      persist(); closeModal(); render(); toast(n ? `Предложено ${n} переводов. Проверьте и подтвердите.` : 'В демо-словаре нет вариантов для выбранных строк.', n ? 'success' : 'warning'); return;
+    }
+    case 'apply-matches': {
+      if (!row || !canEdit()) return;
+      const ids = $('input[name="match-id"]:checked').map(e => e.value);
+      const targets = S.tab === 'matches' && ids.length ? rows.filter(r => ids.includes(r.id)) : rows.filter(r => r.id !== row.id && !ignored(r) && source(r) === source(row) && !accepted(translation(r).status));
+      const text = currentDraft(row);
+      if (!targets.length) { toast('Все одинаковые строки уже подтверждены. Отметьте их на вкладке «Совпадения», чтобы перезаписать.', 'warning'); return; }
+      openModal('Перевести одинаковые строки', `<p>Перевод «${esc(text)}» будет применён к текущей строке и ещё ${targets.length} ${plural(targets.length, 'строке', 'строкам', 'строкам')} с таким же эталоном на языке «${esc(currentLanguage().name)}».</p><p class="muted">Строки с ошибками проверки будут пропущены. Одна кнопка вместо пятисот повторов «OK».</p>`,
+        cancelBtn + `<button class="btn btn--primary" data-act="confirm-matches" data-ids="${esc(targets.map(t => t.id).join('|'))}">${icon('copy')}Применить ко всем</button>`);
+      return;
+    }
+    case 'confirm-matches': {
+      if (!row || !canEdit()) return;
+      const ids = ($('[data-act="confirm-matches"]')?.dataset.ids || '').split('|').filter(Boolean);
+      const text = currentDraft(row);
+      applyBatch([row, ...rows.filter(r => ids.includes(r.id))], () => text); return;
+    }
+    case 'context': if (row) openModal('Контекст строки', `<span class="tag">схема окна · демонстрация</span><p><b>${esc(appById(row.app)?.name || row.app)}</b> → ${esc(row.context)}</p><p>В производственной версии к ключу привязывается реальный снимок окна ENCY или Tuner с подсветкой элемента. Это снимает вопрос «что имелось в виду» у переводчика и разработчика.</p>`, '<button class="btn btn--primary" data-act="close-modal">Понятно</button>'); return;
+    case 'profile':
+      openModal('Роль в прототипе', `<p class="muted">Демонстрация прав доступа без реальной авторизации.</p><form id="role-form" class="form">
+        <label class="match"><input type="radio" class="ck" name="role" value="admin" ${isAdmin() ? 'checked' : ''}><span>Администратор — все языки, приложения и настройки</span></label>
+        ${db.dealers.map(d => `<label class="match"><input type="radio" class="ck" name="role" value="${esc(d.id)}" ${!isAdmin() && S.dealer === d.id ? 'checked' : ''}><span>Переводчик ${esc(d.name)} — ${d.languages.length ? d.languages.map(c => db.languages.find(l => l.code === c)?.tag || c).join(', ') : 'без языков'}</span></label>`).join('')}</form>`,
+        cancelBtn + submitBtn('role-form', 'Переключить')); return;
+    case 'add-language': if (!adminOnly()) return;
+      openModal('Добавить язык', `<form id="language-form" class="form">${fld('Название', input('name', 'placeholder="Итальянский" required maxlength="40"'))}${fld('Код', input('code', 'placeholder="it" required pattern="[a-z]{2,3}(-[A-Z]{2})?" maxlength="6"'), 'ISO 639: it, pt-BR')}${fld('Самоназвание', input('native', 'placeholder="Italiano" required maxlength="40"'))}<div class="form__err" id="form-error"></div></form>`, cancelBtn + submitBtn('language-form', 'Добавить')); return;
+    case 'add-app': if (!adminOnly()) return;
+      openModal('Добавить приложение', `<form id="app-form" class="form">${fld('Техническое имя', input('id', 'placeholder="NewApplication" required pattern="[A-Za-z][A-Za-z0-9_ -]{1,39}"'), 'Как называется .lng-файл')}${fld('Понятное название', input('name', 'placeholder="Название для переводчика" required maxlength="60"'))}${fld('Группа', select('group', GROUPS.map(g => opt(g, g, g === 'ENCY')).join('')))}${fld('Ответственный', input('owner', `value="${esc(ME)}" required maxlength="60"`))}<div class="form__err" id="form-error"></div></form>`, cancelBtn + submitBtn('app-form', 'Добавить')); return;
+    case 'add-dealer': if (!adminOnly()) return;
+      openModal('Добавить компанию', `<form id="dealer-form" class="form">${fld('Название', input('name', 'placeholder="Название компании" required maxlength="60"'))}${fld('Регион', input('region', 'placeholder="Европа" required maxlength="60"'))}${fld('Языки', `<span class="cell-langs">${db.languages.map(l => `<label><input type="checkbox" class="ck" name="languages" value="${esc(l.code)}">${esc(l.tag)}</label>`).join('')}</span>`)}<div class="form__err" id="form-error"></div></form>`, cancelBtn + submitBtn('dealer-form', 'Добавить')); return;
+    case 'copy-translations': if (!adminOnly()) return;
+      openModal('Скопировать перевод между приложениями', `<form id="copy-form" class="form">${fld('Язык', select('lang', langOptions()))}${fld('Из приложения', select('from', appOptions(S.app)))}${fld('В приложение', select('to', appOptions(db.apps.find(a => a.id !== S.app)?.id)))}${fld('', `<label class="tgl"><input type="checkbox" name="overwrite"><span class="tgl__track"></span><span>Перезаписывать подтверждённые переводы</span></label>`)}<p class="muted">Строки сопоставляются по ключу ресурса. Переводы с ошибками проверки пропускаются.</p><div class="form__err" id="form-error"></div></form>`, cancelBtn + submitBtn('copy-form', 'Скопировать')); return;
+    case 'migrate': if (!adminOnly()) return;
+      openModal('Перенести переводы 17.0 → 18.0', `<form id="migrate-form" class="form">${fld('Язык', select('lang', langOptions()))}${fld('', `<label class="tgl"><input type="checkbox" name="overwrite"><span class="tgl__track"></span><span>Перезаписывать уже подтверждённые в 18.0</span></label>`)}<p class="muted">Сохраняется статус, если эталон не изменился; иначе строка становится Outdated. Автоперевод не переносится.</p></form>`, cancelBtn + submitBtn('migrate-form', 'Перенести')); return;
+    case 'exclusions': if (!adminOnly()) return;
+      openModal('Исключаемые модули', `<form id="exclusions-form" class="form"><textarea name="modules" rows="4">${esc(db.excludedModules.join('\n'))}</textarea><small>По одному имени в строке. Строки этих модулей получают статус Ignored.</small></form>`, cancelBtn + submitBtn('exclusions-form', 'Сохранить')); return;
+  }
+}
+
+/* ---------------------------------------------------------------- events */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, a.brand, .tree__group'); if (!t || t.disabled) return;
+  const d = t.dataset;
+  if (d.act) { action(d.act); return; }
+  if (d.page) { S.page = d.page; location.hash = d.page; render(); return; }
+  if (d.app) { goApp(d.app); return; }
+  if (d.group !== undefined) { S.openGroups.has(d.group) ? S.openGroups.delete(d.group) : S.openGroups.add(d.group); render(); return; }
+  if (d.row) { S.selected = d.row; S.editorOpen = true; render(); return; }
+  if (d.status) { S.status = S.status === d.status && d.status !== 'all' ? 'all' : d.status; S.showIgnored = S.status === 'ignored'; render(); return; }
+  if (d.tab) { S.tab = d.tab; render(); return; }
+  if (d.openLang) { goApp('all', d.openLang); return; }
+  if (d.progressApp) { goApp(d.progressApp, d.progressLang); return; }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'translation-input') updateDraft(e.target.value);
+  if (e.target.id === 'string-search') { S.query = e.target.value; render(); }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.id === 'language-select') { S.lang = el.value; render(); }
+  if (el.id === 'version-select') { S.version = el.value; render(); }
+  if (el.id === 'module-select') { S.module = el.value; render(); }
+  if (el.id === 'mine-toggle') { S.mine = el.checked; render(); }
+  if (el.id === 'ignore-toggle') { action('ignore'); }
+  if (el.dataset.access) {
+    if (!adminOnly()) { el.checked = !el.checked; return; }
+    const dealer = db.dealers.find(x => x.id === el.dataset.access);
+    dealer.languages = el.checked ? [...new Set([...dealer.languages, el.value])] : dealer.languages.filter(c => c !== el.value);
+    persist(); render(); toast(`${dealer.name}: доступ к языкам обновлён`);
+  }
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  const form = e.target, f = new FormData(form), val = n => String(f.get(n) || '').trim();
+  const fail = msg => { const el = $('#form-error'); if (el) el.textContent = msg; };
+  if (form.id === 'role-form') { const v = val('role'); if (v === 'admin') S.role = 'admin'; else { S.role = 'translator'; S.dealer = v; } closeModal(); render(); toast('Роль переключена'); return; }
+  if (!adminOnly()) return;
+  if (form.id === 'language-form') {
+    if (db.languages.some(l => l.code.toLowerCase() === val('code').toLowerCase())) return fail('Язык с таким кодом уже есть.');
+    db.languages.push({code: val('code'), name: val('name'), native: val('native'), tag: val('code').toUpperCase()}); persist(); closeModal(); render(); toast('Язык добавлен. Назначьте его компаниям.'); return;
+  }
+  if (form.id === 'app-form') {
+    if (db.apps.some(a => a.id.toLowerCase() === val('id').toLowerCase())) return fail('Приложение с таким именем уже есть.');
+    db.apps.push({id: val('id'), name: val('name'), group: val('group'), owner: val('owner'), description: 'Добавлено вручную', mine: false});
+    rows = makeRows(db.apps); persist(); closeModal(); render(); toast('Приложение добавлено с демонстрационными строками'); return;
+  }
+  if (form.id === 'dealer-form') {
+    if (db.dealers.some(d => d.name.toLowerCase() === val('name').toLowerCase())) return fail('Компания с таким названием уже есть.');
+    db.dealers.push({id: 'dealer-' + Date.now(), name: val('name'), region: val('region'), people: 0, languages: f.getAll('languages')}); persist(); closeModal(); render(); toast('Компания добавлена'); return;
+  }
+  if (form.id === 'copy-form') {
+    if (val('from') === val('to')) return fail('Выберите разные приложения.');
+    const lang = val('lang'); let done = 0;
+    const src = rows.filter(r => r.app === val('from') && !ignored(r));
+    for (const target of rows.filter(r => r.app === val('to') && !ignored(r))) {
+      const s = src.find(r => r.code === target.code); if (!s) continue;
+      const old = translation(s, lang), existing = translation(target, lang);
+      if (!accepted(old.status) || (!f.has('overwrite') && accepted(existing.status))) continue;
+      if (validate(sourceFor(target, S.version), old.text, db.dealers).some(c => !c.ok)) continue;
+      const status = sourceFor(s, S.version) === sourceFor(target, S.version) ? old.status : 'outdated';
+      db.entries[key(target, lang)] = {text: old.text, status, history: [...(existing.history || []), {text: old.text, status, author: `Копия из ${s.app}`, date: new Date().toISOString()}]}; done++;
+    }
+    persist(); closeModal(); render(); toast(done ? `Скопировано ${done} переводов` : 'Нечего копировать: совпадений по ключу нет или подтверждённые строки защищены.', done ? 'success' : 'warning'); return;
+  }
+  if (form.id === 'migrate-form') {
+    const lang = val('lang'); let done = 0, outdated = 0;
+    for (const r of rows) {
+      if (ignored(r)) continue;
+      const existing = translation(r, lang, '18.0'); if (!f.has('overwrite') && accepted(existing.status)) continue;
+      const m = migratedTranslation(r, '17.0', '18.0', translation(r, lang, '17.0'));
+      if (!m || validate(sourceFor(r, '18.0'), m.text, db.dealers).some(c => !c.ok)) continue;
+      db.entries[key(r, lang, '18.0')] = m; done++; if (m.status === 'outdated') outdated++;
+    }
+    persist(); S.version = '18.0'; closeModal(); render(); toast(`Перенесено: ${done}. Стали Outdated: ${outdated}.`); return;
+  }
+  if (form.id === 'exclusions-form') { db.excludedModules = [...new Set(val('modules').split('\n').map(x => x.trim()).filter(Boolean))]; persist(); closeModal(); render(); toast('Список исключаемых модулей обновлён'); }
+});
+document.addEventListener('keydown', e => {
+  if ($('#modal').open) return;
+  const inField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && S.page === 'translations') { e.preventDefault(); applyCurrent(); return; }
+  if (e.target.id === 'translation-input' && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); action('insert-newline'); return; }
+  if (inField) { if (e.key === 'Escape') e.target.blur(); return; }
+  if (S.page !== 'translations') return;
+  if (e.key === '/') { e.preventDefault(); $('#string-search')?.focus(); }
+  if (e.key === 'j') moveRow(1);
+  if (e.key === 'k') moveRow(-1);
+  if (e.key === 'Escape') { S.editorOpen = false; render(); }
+});
+$('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
+window.addEventListener('hashchange', () => { const p = location.hash.slice(1); if (PAGES.includes(p) && p !== S.page) { S.page = p; render(); } });
+const initial = location.hash.slice(1); if (PAGES.includes(initial)) S.page = initial;
+render();
+
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "ency-localisator-prototype",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive ENCY and Tuner localization prototype on the ENCY Core design system",
+  "scripts": {
+    "check": "node --check dist/app.js && node --check dist/data.js && node --check dist/core.js",
+    "test": "node --test tests/*.test.js",
+    "build": "node build_standalone.mjs",
+    "start": "node start_local.mjs"
+  }
+}
