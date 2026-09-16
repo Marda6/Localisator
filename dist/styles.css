@@ -577,3 +577,11 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .cards { grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
 .card .bar { height:6px; }
 .card__big { font-size:24px; line-height:28px; }
+
+/* ============================================= v2.12: цвет только у выбранного приложения === */
+.arow:not(.is-selected):not(:hover) .bar .b-translated { background:var(--ec-fg-48); }
+.arow:not(.is-selected):not(:hover) .bar .b-outdated { background:var(--ec-fg-24); }
+.arow:not(.is-selected):not(:hover) .bar .b-auto { background:var(--ec-fg-16); opacity:1; }
+.arow:not(.is-selected):not(:hover) .arow__meta .todo { color:var(--ec-fg-48); opacity:1; }
+.arow:not(.is-selected):not(:hover) .arow__meta .is-done { color:var(--ec-fg-56); }
+.arow .bar i, .arow__meta .todo { transition:background .16s, color .16s; }
