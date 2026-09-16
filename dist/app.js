@@ -57,7 +57,8 @@ const db = {
   entries: stored.entries || {},
   ignored: stored.ignored || {},
   excludedModules: stored.excludedModules || ['GR32_portable'],
-  theme: stored.theme || 'dark'
+  theme: stored.theme || 'dark',
+  layout: stored.layout || {tree: 232, insp: 380}
 };
 let rows = makeRows(db.apps);
 const drafts = {}; // черновики живут только в сессии — сохраняется лишь применённый перевод
@@ -272,7 +273,7 @@ function inspectorTab(row, t, matches, pending, ig, moduleLocked) {
 }
 
 function translationsPage() {
-  return `<div class="workspace workspace--rows">${appsTree()}${stringsPanel()}${inspector()}</div>`;
+  return `<div class="workspace workspace--rows" style="--tree-w:${db.layout.tree}px;--insp-w:${db.layout.insp}px">${appsTree()}<div class="gutter" data-gutter="tree" title="Потянуть, чтобы изменить ширину"></div>${stringsPanel()}<div class="gutter" data-gutter="insp"></div>${inspector()}</div>`;
 }
 
 /* ---------------------------------------------------------- progress page */
@@ -632,6 +633,16 @@ document.addEventListener('keydown', e => {
   if (e.key === 'k') moveRow(-1);
   if (e.key === 'Escape') { S.editorOpen = false; render(); }
 });
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.gutter'); if (!g) return;
+  const ws = g.parentElement, which = g.dataset.gutter, startX = e.clientX, start = db.layout[which];
+  const min = which === 'tree' ? 160 : 300, max = which === 'tree' ? 400 : 640;
+  g.classList.add('is-active'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+  const move = ev => { const d = ev.clientX - startX; db.layout[which] = Math.round(Math.min(max, Math.max(min, which === 'tree' ? start + d : start - d))); ws.style.setProperty(`--${which}-w`, db.layout[which] + 'px'); };
+  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); g.classList.remove('is-active'); document.body.style.cursor = ''; document.body.style.userSelect = ''; persist(); };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); e.preventDefault();
+});
+document.addEventListener('dblclick', e => { const g = e.target.closest('.gutter'); if (!g) return; db.layout[g.dataset.gutter] = g.dataset.gutter === 'tree' ? 232 : 380; persist(); render(); });
 $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
 window.addEventListener('hashchange', () => { const p = location.hash.slice(1); if (PAGES.includes(p) && p !== S.page) { S.page = p; render(); } });
 const initial = location.hash.slice(1); if (PAGES.includes(initial)) S.page = initial;
