@@ -730,6 +730,27 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .heat__cell--sum b { font-weight:600; }
 .heat__cell--sum small { border-left-color:rgba(0,0,0,.25); }
 
+/* v2.21: шкала готовности как покрытие в CAM — коралл (0%) → янтарь → зелёный (100%) */
+.heat__cell, .heat-legend i {
+  background:color-mix(in srgb, color-mix(in hsl, var(--op-coral), var(--ec-green) calc(var(--h) * 100%)) 62%, var(--ec-card-2));
+  color:var(--ec-fg-96);
+}
+.heat__cell:hover { filter:brightness(1.12); }
+.heat__cell.is-done { background:var(--ec-green); }
+.heat__cell small { border-left-color:rgba(0,0,0,.22); }
+.heat-legend i { width:16px; }
+:root[data-theme="light"] .heat__cell, :root[data-theme="light"] .heat-legend i {
+  background:color-mix(in srgb, color-mix(in hsl, var(--op-coral), var(--ec-green) calc(var(--h) * 100%)) 55%, #ffffff);
+}
+:root[data-theme="light"] .heat__cell b { color:var(--ec-fg-96); }
+:root[data-theme="light"] .heat__cell.is-done b { color:#ffffff; }
+/* v2.21.1: чуть тише — чипы не должны спорить с текстом */
+.heat__cell, .heat-legend i { background:color-mix(in srgb, color-mix(in hsl, var(--op-coral), var(--ec-green) calc(var(--h) * 100%)) 48%, var(--ec-card-2)); }
+.heat__cell b { color:var(--ec-fg-96); }
+.heat__cell small { color:var(--ec-fg-72); }
+.heat__cell.is-done { background:var(--ec-green); }
+.heat__cell.is-done b { color:var(--ec-ink); }
+
 </style>
 </head>
 <body>
