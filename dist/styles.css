@@ -609,3 +609,9 @@ dialog::backdrop { background:var(--ec-bg-80); }
 @container (max-width: 560px) {
   .panel--strings .toolbar .fchip[data-act="toggle-mine"] .fchip__label { display:none; }
 }
+
+/* v2.13.2: сворачивать подписи статусов только когда они реально не помещаются */
+@container (min-width: 761px) {
+  .panel--strings .toolbar__row--chips .fchip:not([data-status="all"]) .fchip__label { display:inline; }
+  .panel--strings .toolbar__row--chips .fchip:not([data-status="all"]) { padding:0 8px; }
+}
