@@ -179,12 +179,11 @@ function stringsPanel() {
       <button class="btn" data-act="autotranslate" ${!canEdit() || !st.untranslated ? 'disabled' : ''} title="Предложить автоперевод для ${st.untranslated} строк без перевода">${icon('sparkles')}<span>Автоперевод</span></button>
       <button class="btn" data-act="export" title="Скачать .lng для ${esc(app ? app.name : 'всех приложений')} · ${esc(currentLanguage().name)}">${icon('download')}<span>.lng</span></button></div>
     <div class="toolbar">
-      <label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Поиск по тексту или ключу" autocomplete="off"><kbd>/</kbd></label>
-      ${chips.map(([id, label, n, dot]) => `<button class="fchip ${S.status === id ? 'is-active' : ''}" data-status="${id}">${dot ? `<span class="fchip__dot" style="--dot:var(${dot})"></span>` : ''}${label}<span class="fchip__n">${n}</span></button>`).join('')}
-      <span class="spacer"></span>
+      <div class="toolbar__row"><label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Поиск по тексту или ключу" autocomplete="off"><kbd>/</kbd></label><span class="spacer"></span>
       ${dd('module-select', '', [opt('all', 'Все модули', S.module === 'all'), ...Object.entries(MODULES).map(([id, m]) => opt(id, m.label, S.module === id))].join(''))}
       <button class="fchip ${S.mine ? 'is-active' : ''}" data-act="toggle-mine" title="Только строки, за которые отвечаю я">${icon('user')}Мои</button>
-      ${filtered ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}
+      ${filtered ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}</div>
+      <div class="toolbar__row toolbar__row--chips">${chips.map(([id, label, n, dot]) => `<button class="fchip ${S.status === id ? 'is-active' : ''}" data-status="${id}">${dot ? `<span class="fchip__dot" style="--dot:var(${dot})"></span>` : ''}<span class="fchip__label">${label}</span><span class="fchip__n">${n}</span></button>`).join('')}</div>
     </div>
     <div class="panel__body" id="strings-list">
       <div class="grid-head"><span>English</span><span class="col-tr">${esc(currentLanguage().name)}</span><span>Статус</span></div>

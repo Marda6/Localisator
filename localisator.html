@@ -540,6 +540,19 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .acc--ctx .win { cursor:default; }
 .panel__head .ibtn.is-pressed { color:var(--ec-amber); background:var(--ec-fg-8); }
 
+/* ============================================= v2.9: тулбар в два ряда === */
+.toolbar { flex-direction:column; align-items:stretch; gap:6px; flex-wrap:nowrap; container-type:inline-size; }
+.toolbar__row { display:flex; align-items:center; gap:6px; min-width:0; }
+.toolbar__row .field--search { flex:1 1 200px; width:auto; max-width:360px; }
+.toolbar__row--chips { flex-wrap:nowrap; overflow:hidden; }
+.toolbar__row--chips .fchip { flex:0 1 auto; min-width:0; }
+.toolbar__row--chips .fchip__label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* когда не влезает — подписи статусов сворачиваются до точки и числа, статус читается по цвету */
+@container (max-width: 560px) {
+  .toolbar__row--chips .fchip:not([data-status="all"]) .fchip__label { display:none; }
+  .toolbar__row--chips .fchip:not([data-status="all"]) { padding:0 6px; }
+}
+
 </style>
 </head>
 <body>
@@ -893,12 +906,11 @@ function stringsPanel() {
       <button class="btn" data-act="autotranslate" ${!canEdit() || !st.untranslated ? 'disabled' : ''} title="Предложить автоперевод для ${st.untranslated} строк без перевода">${icon('sparkles')}<span>Автоперевод</span></button>
       <button class="btn" data-act="export" title="Скачать .lng для ${esc(app ? app.name : 'всех приложений')} · ${esc(currentLanguage().name)}">${icon('download')}<span>.lng</span></button></div>
     <div class="toolbar">
-      <label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Поиск по тексту или ключу" autocomplete="off"><kbd>/</kbd></label>
-      ${chips.map(([id, label, n, dot]) => `<button class="fchip ${S.status === id ? 'is-active' : ''}" data-status="${id}">${dot ? `<span class="fchip__dot" style="--dot:var(${dot})"></span>` : ''}${label}<span class="fchip__n">${n}</span></button>`).join('')}
-      <span class="spacer"></span>
+      <div class="toolbar__row"><label class="field field--search">${icon('search')}<input id="string-search" type="search" value="${esc(S.query)}" placeholder="Поиск по тексту или ключу" autocomplete="off"><kbd>/</kbd></label><span class="spacer"></span>
       ${dd('module-select', '', [opt('all', 'Все модули', S.module === 'all'), ...Object.entries(MODULES).map(([id, m]) => opt(id, m.label, S.module === id))].join(''))}
       <button class="fchip ${S.mine ? 'is-active' : ''}" data-act="toggle-mine" title="Только строки, за которые отвечаю я">${icon('user')}Мои</button>
-      ${filtered ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}
+      ${filtered ? `<button class="ibtn" data-act="reset-filters" title="Сбросить фильтры">${icon('close')}</button>` : ''}</div>
+      <div class="toolbar__row toolbar__row--chips">${chips.map(([id, label, n, dot]) => `<button class="fchip ${S.status === id ? 'is-active' : ''}" data-status="${id}">${dot ? `<span class="fchip__dot" style="--dot:var(${dot})"></span>` : ''}<span class="fchip__label">${label}</span><span class="fchip__n">${n}</span></button>`).join('')}</div>
     </div>
     <div class="panel__body" id="strings-list">
       <div class="grid-head"><span>English</span><span class="col-tr">${esc(currentLanguage().name)}</span><span>Статус</span></div>

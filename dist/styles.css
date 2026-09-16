@@ -533,3 +533,16 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .acc--ctx .acc__body { padding:4px 0 0; gap:6px; }
 .acc--ctx .win { cursor:default; }
 .panel__head .ibtn.is-pressed { color:var(--ec-amber); background:var(--ec-fg-8); }
+
+/* ============================================= v2.9: тулбар в два ряда === */
+.toolbar { flex-direction:column; align-items:stretch; gap:6px; flex-wrap:nowrap; container-type:inline-size; }
+.toolbar__row { display:flex; align-items:center; gap:6px; min-width:0; }
+.toolbar__row .field--search { flex:1 1 200px; width:auto; max-width:360px; }
+.toolbar__row--chips { flex-wrap:nowrap; overflow:hidden; }
+.toolbar__row--chips .fchip { flex:0 1 auto; min-width:0; }
+.toolbar__row--chips .fchip__label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* когда не влезает — подписи статусов сворачиваются до точки и числа, статус читается по цвету */
+@container (max-width: 560px) {
+  .toolbar__row--chips .fchip:not([data-status="all"]) .fchip__label { display:none; }
+  .toolbar__row--chips .fchip:not([data-status="all"]) { padding:0 6px; }
+}
