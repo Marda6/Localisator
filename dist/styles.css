@@ -546,3 +546,34 @@ dialog::backdrop { background:var(--ec-bg-80); }
   .toolbar__row--chips .fchip:not([data-status="all"]) .fchip__label { display:none; }
   .toolbar__row--chips .fchip:not([data-status="all"]) { padding:0 6px; }
 }
+
+/* ============================================= v2.10: карточки приложений в дереве === */
+.tree { padding:4px; }
+.tree__group { height:28px; margin-top:4px; gap:6px; }
+.tree__group .muted { font-weight:400; }
+.arow { display:flex; flex-direction:column; gap:4px; width:100%; padding:6px 8px 7px 8px; margin-bottom:2px; text-align:left;
+  border-radius:var(--ec-radius); color:var(--ec-fg-72); border:1px solid transparent; transition:background .12s,color .12s,border-color .12s; }
+.arow:hover { background:var(--ec-fg-4); color:var(--ec-fg-96); }
+.arow.is-selected { background:var(--ec-fg-8); color:var(--ec-fg-100); border-color:var(--ec-fg-8); }
+.arow--all { margin-bottom:0; }
+.arow__top { display:flex; align-items:center; gap:6px; height:16px; }
+.arow__name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; }
+.arow__me { display:inline-grid; place-items:center; color:var(--ec-fg-40, var(--ec-fg-48)); }
+.arow__me .icon { width:12px; height:12px; }
+.arow .pct { font-variant-numeric:tabular-nums; color:var(--ec-fg-64); }
+.arow.is-selected .pct { color:var(--ec-fg-96); }
+.arow .bar { height:3px; }
+.arow__meta { display:flex; align-items:center; gap:0; height:14px; font-size:11px; line-height:14px; color:var(--ec-fg-48); white-space:nowrap; overflow:hidden; }
+.arow__meta .sep { width:1px; height:8px; background:var(--ec-fg-16); margin:0 6px; flex-shrink:0; }
+.arow__meta .todo { overflow:hidden; text-overflow:ellipsis; }
+.arow__meta .todo--untranslated { color:var(--ec-fg-64); }
+.arow__meta .todo--auto { color:var(--st-auto); opacity:.85; }
+.arow__meta .todo--outdated { color:var(--st-outdated); opacity:.9; }
+.arow__meta .is-done { color:var(--ec-green); }
+:root[data-theme="light"] .arow__meta .todo--auto { opacity:1; }
+
+/* ============================================= v2.11: центр администрирования, карточки языков на всю ширину === */
+.page--narrow { width:100%; max-width:1120px; margin:0 auto; }
+.cards { grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+.card .bar { height:6px; }
+.card__big { font-size:24px; line-height:28px; }

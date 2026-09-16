@@ -553,6 +553,37 @@ dialog::backdrop { background:var(--ec-bg-80); }
   .toolbar__row--chips .fchip:not([data-status="all"]) { padding:0 6px; }
 }
 
+/* ============================================= v2.10: карточки приложений в дереве === */
+.tree { padding:4px; }
+.tree__group { height:28px; margin-top:4px; gap:6px; }
+.tree__group .muted { font-weight:400; }
+.arow { display:flex; flex-direction:column; gap:4px; width:100%; padding:6px 8px 7px 8px; margin-bottom:2px; text-align:left;
+  border-radius:var(--ec-radius); color:var(--ec-fg-72); border:1px solid transparent; transition:background .12s,color .12s,border-color .12s; }
+.arow:hover { background:var(--ec-fg-4); color:var(--ec-fg-96); }
+.arow.is-selected { background:var(--ec-fg-8); color:var(--ec-fg-100); border-color:var(--ec-fg-8); }
+.arow--all { margin-bottom:0; }
+.arow__top { display:flex; align-items:center; gap:6px; height:16px; }
+.arow__name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; }
+.arow__me { display:inline-grid; place-items:center; color:var(--ec-fg-40, var(--ec-fg-48)); }
+.arow__me .icon { width:12px; height:12px; }
+.arow .pct { font-variant-numeric:tabular-nums; color:var(--ec-fg-64); }
+.arow.is-selected .pct { color:var(--ec-fg-96); }
+.arow .bar { height:3px; }
+.arow__meta { display:flex; align-items:center; gap:0; height:14px; font-size:11px; line-height:14px; color:var(--ec-fg-48); white-space:nowrap; overflow:hidden; }
+.arow__meta .sep { width:1px; height:8px; background:var(--ec-fg-16); margin:0 6px; flex-shrink:0; }
+.arow__meta .todo { overflow:hidden; text-overflow:ellipsis; }
+.arow__meta .todo--untranslated { color:var(--ec-fg-64); }
+.arow__meta .todo--auto { color:var(--st-auto); opacity:.85; }
+.arow__meta .todo--outdated { color:var(--st-outdated); opacity:.9; }
+.arow__meta .is-done { color:var(--ec-green); }
+:root[data-theme="light"] .arow__meta .todo--auto { opacity:1; }
+
+/* ============================================= v2.11: центр администрирования, карточки языков на всю ширину === */
+.page--narrow { width:100%; max-width:1120px; margin:0 auto; }
+.cards { grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+.card .bar { height:6px; }
+.card__big { font-size:24px; line-height:28px; }
+
 </style>
 </head>
 <body>
@@ -875,19 +906,29 @@ function header() {
 /* ------------------------------------------------------ translations page */
 const GROUPS = ['ENCY', 'Инструменты', 'Сервисы', 'Tuner', 'Другие'];
 
+function todoLine(st) {
+  if (!st.total) return '<span class="muted">нет строк</span>';
+  if (st.percent === 100) return '<span class="is-done">всё переведено</span>';
+  const parts = [];
+  if (st.untranslated) parts.push(`<span class="todo todo--untranslated">${st.untranslated} без перевода</span>`);
+  if (st.auto) parts.push(`<span class="todo todo--auto">${st.auto} авто</span>`);
+  if (st.outdated) parts.push(`<span class="todo todo--outdated">${st.outdated} устарело</span>`);
+  return parts.join('<i class="sep"></i>');
+}
 function appsTree() {
   const all = getStats(rows);
-  return `<aside class="panel panel--tree"><div class="panel__head"><span class="panel__title">Приложения</span></div>
+  return `<aside class="panel panel--tree"><div class="panel__head"><span class="panel__title">Приложения</span><span class="tag">${esc(currentLanguage().tag)}</span></div>
     <div class="panel__body tree">
-      <button class="trow trow--all ${S.app === 'all' ? 'is-selected' : ''}" data-app="all"><span class="trow__name">Все приложения</span><span class="pct">${all.percent}%</span></button>
+      <button class="arow arow--all ${S.app === 'all' ? 'is-selected' : ''}" data-app="all"><span class="arow__top"><span class="arow__name">Все приложения</span><span class="pct">${all.percent}%</span></span>${bar(all)}<span class="arow__meta">${todoLine(all)}</span></button>
       ${GROUPS.map(g => {
         const apps = db.apps.filter(a => a.group === g);
         if (!apps.length) return '';
         const open = S.openGroups.has(g) || apps.some(a => a.id === S.app);
         const gst = getStats(rows.filter(r => apps.some(a => a.id === r.app)));
-        return `<div class="tree__group ${open ? 'is-open' : ''}" data-group="${esc(g)}">${icon('right')}<span>${esc(g)}</span><span class="pct">${gst.percent}%</span></div>
-        ${open ? apps.map(a => { const st = getStats(rows.filter(r => r.app === a.id)); return `<button class="trow ${S.app === a.id ? 'is-selected' : ''}" data-app="${esc(a.id)}" title="${esc(a.id)} · ${esc(a.description)}">
-          <span class="trow__name">${esc(a.name)}</span><span class="pct ${st.percent === 100 ? 'is-done' : ''}">${st.percent}%</span></button>`; }).join('') : ''}`;
+        return `<div class="tree__group ${open ? 'is-open' : ''}" data-group="${esc(g)}">${icon('right')}<span>${esc(g)}</span><span class="muted">${apps.length}</span><span class="pct">${gst.percent}%</span></div>
+        ${open ? apps.map(a => { const st = getStats(rows.filter(r => r.app === a.id)); const mine = a.owner === ME; return `<button class="arow ${S.app === a.id ? 'is-selected' : ''}" data-app="${esc(a.id)}" title="${esc(a.id)} · ${esc(a.description)}">
+          <span class="arow__top"><span class="arow__name">${esc(a.name)}</span>${mine ? `<span class="arow__me" title="Вы ответственный">${icon('user')}</span>` : ''}<span class="pct ${st.percent === 100 ? 'is-done' : ''}">${st.percent}%</span></span>
+          ${bar(st)}<span class="arow__meta">${todoLine(st)}</span></button>`; }).join('') : ''}`;
       }).join('')}
     </div></aside>`;
 }

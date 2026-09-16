@@ -148,19 +148,29 @@ function header() {
 /* ------------------------------------------------------ translations page */
 const GROUPS = ['ENCY', 'Инструменты', 'Сервисы', 'Tuner', 'Другие'];
 
+function todoLine(st) {
+  if (!st.total) return '<span class="muted">нет строк</span>';
+  if (st.percent === 100) return '<span class="is-done">всё переведено</span>';
+  const parts = [];
+  if (st.untranslated) parts.push(`<span class="todo todo--untranslated">${st.untranslated} без перевода</span>`);
+  if (st.auto) parts.push(`<span class="todo todo--auto">${st.auto} авто</span>`);
+  if (st.outdated) parts.push(`<span class="todo todo--outdated">${st.outdated} устарело</span>`);
+  return parts.join('<i class="sep"></i>');
+}
 function appsTree() {
   const all = getStats(rows);
-  return `<aside class="panel panel--tree"><div class="panel__head"><span class="panel__title">Приложения</span></div>
+  return `<aside class="panel panel--tree"><div class="panel__head"><span class="panel__title">Приложения</span><span class="tag">${esc(currentLanguage().tag)}</span></div>
     <div class="panel__body tree">
-      <button class="trow trow--all ${S.app === 'all' ? 'is-selected' : ''}" data-app="all"><span class="trow__name">Все приложения</span><span class="pct">${all.percent}%</span></button>
+      <button class="arow arow--all ${S.app === 'all' ? 'is-selected' : ''}" data-app="all"><span class="arow__top"><span class="arow__name">Все приложения</span><span class="pct">${all.percent}%</span></span>${bar(all)}<span class="arow__meta">${todoLine(all)}</span></button>
       ${GROUPS.map(g => {
         const apps = db.apps.filter(a => a.group === g);
         if (!apps.length) return '';
         const open = S.openGroups.has(g) || apps.some(a => a.id === S.app);
         const gst = getStats(rows.filter(r => apps.some(a => a.id === r.app)));
-        return `<div class="tree__group ${open ? 'is-open' : ''}" data-group="${esc(g)}">${icon('right')}<span>${esc(g)}</span><span class="pct">${gst.percent}%</span></div>
-        ${open ? apps.map(a => { const st = getStats(rows.filter(r => r.app === a.id)); return `<button class="trow ${S.app === a.id ? 'is-selected' : ''}" data-app="${esc(a.id)}" title="${esc(a.id)} · ${esc(a.description)}">
-          <span class="trow__name">${esc(a.name)}</span><span class="pct ${st.percent === 100 ? 'is-done' : ''}">${st.percent}%</span></button>`; }).join('') : ''}`;
+        return `<div class="tree__group ${open ? 'is-open' : ''}" data-group="${esc(g)}">${icon('right')}<span>${esc(g)}</span><span class="muted">${apps.length}</span><span class="pct">${gst.percent}%</span></div>
+        ${open ? apps.map(a => { const st = getStats(rows.filter(r => r.app === a.id)); const mine = a.owner === ME; return `<button class="arow ${S.app === a.id ? 'is-selected' : ''}" data-app="${esc(a.id)}" title="${esc(a.id)} · ${esc(a.description)}">
+          <span class="arow__top"><span class="arow__name">${esc(a.name)}</span>${mine ? `<span class="arow__me" title="Вы ответственный">${icon('user')}</span>` : ''}<span class="pct ${st.percent === 100 ? 'is-done' : ''}">${st.percent}%</span></span>
+          ${bar(st)}<span class="arow__meta">${todoLine(st)}</span></button>`; }).join('') : ''}`;
       }).join('')}
     </div></aside>`;
 }
