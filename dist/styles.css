@@ -744,3 +744,34 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .heat__cell small { color:var(--ec-fg-72); }
 .heat__cell.is-done { background:var(--ec-green); }
 .heat__cell.is-done b { color:var(--ec-ink); }
+
+/* ============================================= v2.22: пять ступеней готовности + кликабельная легенда === */
+:root { --band-0:var(--op-coral); --band-1:var(--ec-amber); --band-2:var(--op-yellow); --band-3:var(--op-green); --band-4:var(--ec-green); }
+.heat__cell { background:color-mix(in srgb, var(--bc) 46%, var(--ec-card-2)); transition:opacity .12s, filter .12s; }
+.heat__cell.band-0 { --bc:var(--band-0); } .heat__cell.band-1 { --bc:var(--band-1); } .heat__cell.band-2 { --bc:var(--band-2); } .heat__cell.band-3 { --bc:var(--band-3); }
+.heat__cell.band-4 { --bc:var(--band-4); background:var(--ec-green); }
+.heat__cell.band-4 b { color:var(--ec-ink); }
+.heat__cell.band-4 small { color:var(--ec-ink); opacity:.7; border-left-color:rgba(0,0,0,.2); }
+.heat__cell.is-dim { opacity:.18; }
+.heat__cell:hover { filter:brightness(1.12); opacity:1; }
+.heat-legend { gap:2px; }
+.heat-legend__b { width:18px; height:14px; border-radius:2px; border:1px solid transparent; padding:0; transition:transform .12s, opacity .12s; }
+.heat-legend__b.band-0 { background:color-mix(in srgb, var(--band-0) 46%, var(--ec-card-2)); }
+.heat-legend__b.band-1 { background:color-mix(in srgb, var(--band-1) 46%, var(--ec-card-2)); }
+.heat-legend__b.band-2 { background:color-mix(in srgb, var(--band-2) 46%, var(--ec-card-2)); }
+.heat-legend__b.band-3 { background:color-mix(in srgb, var(--band-3) 46%, var(--ec-card-2)); }
+.heat-legend__b.band-4 { background:var(--ec-green); }
+.heat-legend__b:hover { transform:translateY(-1px); }
+.heat-legend.has-sel .heat-legend__b:not(.is-on) { opacity:.3; }
+.heat-legend__b.is-on { border-color:var(--ec-fg-96); transform:scale(1.08); }
+.heat-legend .muted { margin-left:6px; min-width:56px; }
+:root[data-theme="light"] .heat__cell { background:color-mix(in srgb, var(--bc) 40%, #ffffff); }
+:root[data-theme="light"] .heat__cell.band-4 { background:var(--ec-green); }
+:root[data-theme="light"] .heat__cell.band-4 b, :root[data-theme="light"] .heat__cell.band-4 small { color:#ffffff; }
+/* v2.22.1: ступени различимы — средняя уходит в жёлто-зелёный, насыщенность чуть выше */
+:root { --band-1:#e0a23a; --band-2:color-mix(in srgb, var(--op-yellow) 55%, var(--op-green)); }
+.heat__cell:not(.band-4) { background:color-mix(in srgb, var(--bc) 54%, var(--ec-card-2)); }
+.heat-legend__b.band-0 { background:color-mix(in srgb, var(--band-0) 54%, var(--ec-card-2)); }
+.heat-legend__b.band-1 { background:color-mix(in srgb, var(--band-1) 54%, var(--ec-card-2)); }
+.heat-legend__b.band-2 { background:color-mix(in srgb, var(--band-2) 54%, var(--ec-card-2)); }
+.heat-legend__b.band-3 { background:color-mix(in srgb, var(--band-3) 54%, var(--ec-card-2)); }
