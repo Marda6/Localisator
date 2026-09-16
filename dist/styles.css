@@ -684,3 +684,7 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .heat__cell--sum { opacity:.85; outline:1px dashed var(--ec-fg-16); outline-offset:-1px; }
 .heat__group.is-open .heat__cell--sum { opacity:.55; }
 .table.heat tbody tr:first-child td { border-top:none; }
+
+/* v2.17.1: шкала карты — низкие значения серые, зелёный набирает силу нелинейно */
+.heat__cell, .heat-legend i { background:color-mix(in srgb, var(--ec-green) calc(var(--h) * var(--h) * 78%), var(--ec-fg-6)); }
+.heat__cell[style*="--h:0;"], .heat__cell[style="--h:0"] { color:var(--ec-fg-48); }

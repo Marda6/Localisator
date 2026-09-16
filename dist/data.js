@@ -111,14 +111,27 @@ export function makeRows(apps = APPS) {
   });
 }
 
-export function initialTranslation(row,lang,version='18.0') {
-  const suggestion=row.suggestions[lang]||'';
-  if(!suggestion || row.ignored) return {text:'',status:'untranslated',history:[]};
-  let status = ['auto','translated','outdated','translated','auto','outdated','untranslated','auto','translated','translated','translated','untranslated'][row.index%12];
-  if(!row.previousSource && status==='outdated') status='translated';
-  if(version==='17.0' && status==='outdated') status='translated';
-  if(lang!=='ru' && row.index%4===0) status='untranslated';
-  let text=status==='untranslated'?'':suggestion;
-  if(lang==='ru' && status==='outdated') text=row.code==='Tool.SpindleSpeed'?'Скорость шпинделя':'Высота отвода';
-  return {text,status,history:text?[{text,status,author:status==='auto'?'Автоперевод':'Анна Волкова',date:'2026-09-15T10:40:00.000Z'}]:[]};
+// Зрелость перевода языка в приложении: даёт реалистичный разброс на тепловой карте.
+const BASE = { ru: 0.86, de: 0.52, es: 0.3, fr: 0.14 };
+const hash = str => [...str].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+export function maturity(app, lang) {
+  if (lang === 'ru' && ['Tuner Shell', 'Updater', 'Installer'].includes(app)) return 1;
+  if (lang === 'fr' && ['SCStatistic', 'STeamCenter', 'PLMToolConverter', 'InterpreterCreator'].includes(app)) return 0;
+  if (lang === 'es' && ['Tuner XML', 'SendSupportMessage'].includes(app)) return 0;
+  const base = BASE[lang] ?? 0.4;
+  const offset = ((hash(app + lang) % 100) / 100 - 0.5) * 0.5;
+  return Math.max(0, Math.min(1, base + offset));
+}
+
+export function initialTranslation(row, lang, version = '18.0') {
+  const suggestion = row.suggestions[lang] || '';
+  if (!suggestion || row.ignored) return { text: '', status: 'untranslated', history: [] };
+  const m = maturity(row.app, lang);
+  const r = ((row.index * 7 + hash(row.app + lang)) % 20) / 20;
+  let status = r < m ? 'translated' : r < m + 0.18 ? 'auto' : 'untranslated';
+  if (status === 'translated' && row.previousSource && version === '18.0') status = 'outdated';
+  if (m === 1) status = 'translated';
+  let text = status === 'untranslated' ? '' : suggestion;
+  if (lang === 'ru' && status === 'outdated') text = row.code === 'Tool.SpindleSpeed' ? 'Скорость шпинделя' : 'Высота отвода';
+  return { text, status, history: text ? [{ text, status, author: status === 'auto' ? 'Автоперевод' : 'Анна Волкова', date: '2026-09-15T10:40:00.000Z' }] : [] };
 }
