@@ -68,7 +68,7 @@ const PAGES = ['translations', 'progress', 'admin', 'guide'];
 const S = {
   page: 'translations', app: 'CAM', lang: 'ru', version: '18.0',
   status: 'all', module: 'all', query: '', mine: false, showIgnored: false,
-  selected: 'CAM.Toolpath.Calculate', tab: 'context', winOpen: false, matchSel: new Set(), matchSelFor: null,
+  selected: 'CAM.Toolpath.Calculate', tab: 'context', winOpen: false, progressSort: 'group', matchSel: new Set(), matchSelFor: null,
   role: 'admin', dealer: 'dealer-a',
   openGroups: new Set(['ENCY']), editorOpen: false
 };
@@ -302,10 +302,19 @@ function progressPage() {
       <div class="card__head"><span class="card__tag">${esc(l.tag)}</span><div><div class="card__title">${esc(l.name)}</div><div class="card__sub">${esc(l.native)} · ${editors.length ? editors.map(d => esc(d.name)).join(', ') : 'переводчики не назначены'}</div></div></div>
       <div class="card__big">${st.percent}<small>%</small></div>${bar(st)}
       <div class="card__legend"><span><b>${fmt(st.translated)}</b> переведено</span><span><b>${fmt(st.outdated)}</b> устарело</span><span><b>${fmt(st.auto)}</b> авто</span><span><b>${fmt(st.untranslated)}</b> без перевода</span></div></button>`; }).join('')}</div>
-    <section class="panel"><div class="panel__head"><span class="panel__title">Прогресс по приложениям<span class="panel__count">ENCY ${esc(S.version)}</span></span><span class="spacer"></span><span class="muted">В процент входят только Translated. Ignored исключены из знаменателя. Нажмите на процент, чтобы открыть строки.</span></div>
-      <div class="panel__body"><table class="table"><thead><tr><th>Приложение</th><th>Группа</th><th class="num">Строк</th>${db.languages.map(l => `<th class="num">${esc(l.tag)}</th>`).join('')}</tr></thead><tbody>
-        ${db.apps.map(a => { const list = rows.filter(r => r.app === a.id); return `<tr><td><span class="cell-app">${esc(a.name)}<small>${esc(a.id)}</small></span></td><td class="muted">${esc(a.group)}</td><td class="num">${fmt(getStats(list).total)}</td>${db.languages.map(l => { const st = getStats(list, l.code); return `<td class="num"><span class="cell-pct">${bar(st)}<button data-progress-app="${esc(a.id)}" data-progress-lang="${esc(l.code)}">${st.percent}%</button></span></td>`; }).join('')}</tr>`; }).join('')}
-      </tbody></table></div></section>
+    <section class="panel"><div class="panel__head"><span class="panel__title">Готовность по приложениям<span class="panel__count">ENCY ${esc(S.version)}</span></span>
+        <span class="spacer"></span>
+        <span class="muted">Сортировка</span><div class="seg seg--sm"><button class="${S.progressSort === 'group' ? 'is-active' : ''}" data-psort="group">По группам</button><button class="${S.progressSort === 'worst' ? 'is-active' : ''}" data-psort="worst">Сначала отстающие</button></div>
+        <span class="header__sep"></span><span class="heat-legend"><i style="--h:0"></i><i style="--h:.25"></i><i style="--h:.5"></i><i style="--h:.75"></i><i style="--h:1"></i><span class="muted">0 → 100%</span></span></div>
+      <div class="panel__body"><table class="table heat"><thead><tr><th>Приложение</th><th class="num">Строк</th>${db.languages.map(l => `<th class="num ${l.code === S.lang ? 'is-cur' : ''}">${esc(l.tag)}</th>`).join('')}</tr></thead><tbody>
+        ${(() => {
+          const cell = (a, l) => { const st = getStats(rows.filter(r => r.app === a.id), l.code); const h = st.percent / 100; return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><button class="heat__cell ${st.percent === 100 ? 'is-done' : ''}" style="--h:${h}" data-progress-app="${esc(a.id)}" data-progress-lang="${esc(l.code)}" title="${esc(a.name)} · ${esc(l.name)}: переведено ${st.translated}, устарело ${st.outdated}, авто ${st.auto}, без перевода ${st.untranslated}"><b>${st.percent}%</b>${st.untranslated ? `<small>${st.untranslated}</small>` : ''}</button></td>`; };
+          const rowHtml = a => `<tr><td><span class="cell-app">${esc(a.name)}<small>${esc(a.id)}</small></span></td><td class="num muted">${fmt(getStats(rows.filter(r => r.app === a.id)).total)}</td>${db.languages.map(l => cell(a, l)).join('')}</tr>`;
+          if (S.progressSort === 'worst') return [...db.apps].sort((x, y) => getStats(rows.filter(r => r.app === x.id)).percent - getStats(rows.filter(r => r.app === y.id)).percent).map(rowHtml).join('');
+          return GROUPS.map(g => { const apps = db.apps.filter(x => x.group === g); if (!apps.length) return ''; const gst = getStats(rows.filter(r => apps.some(x => x.id === r.app))); return `<tr class="heat__group"><td colspan="2"><b>${esc(g)}</b><span class="muted"> · ${apps.length}</span></td>${db.languages.map(l => { const st = getStats(rows.filter(r => apps.some(x => x.id === r.app)), l.code); return `<td class="num ${l.code === S.lang ? 'is-cur' : ''}"><span class="muted">${st.percent}%</span></td>`; }).join('')}</tr>` + apps.map(rowHtml).join(''); }).join('');
+        })()}
+      </tbody></table></div>
+      <div class="panel__foot"><span class="muted">В ячейке: процент Translated и мелко — сколько строк без перевода. Ignored исключены. Клик открывает строки приложения на этом языке.</span></div></section>
   </div></div>`;
 }
 
@@ -568,6 +577,7 @@ document.addEventListener('click', e => {
   if (d.app) { goApp(d.app); return; }
   if (d.group !== undefined) { S.openGroups.has(d.group) ? S.openGroups.delete(d.group) : S.openGroups.add(d.group); render(); return; }
   if (d.tab) { S.tab = d.tab; render(); return; }
+  if (d.psort) { S.progressSort = d.psort; render(); return; }
   if (d.restore !== undefined) { if (canEdit()) { updateDraft(d.restore); render(); $('#translation-input')?.focus(); } return; }
   if (d.goto) { const r = rows.find(x => x.id === d.goto); if (r) { S.app = r.app; S.selected = r.id; render(); $(`[data-row="${CSS.escape(r.id)}"]`)?.scrollIntoView({block: 'nearest'}); } return; }
   if (d.row) { S.selected = d.row; S.editorOpen = true; render(); $('#translation-input')?.focus(); return; }

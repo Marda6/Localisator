@@ -620,3 +620,29 @@ dialog::backdrop { background:var(--ec-bg-80); }
 .sect--tabs .seg { padding:2px; border-radius:var(--ec-radius-md); }
 .sect--tabs .seg button { height:28px; border-radius:6px; font-size:12px; }
 .sect--tabs .seg button small { font-size:11px; }
+
+/* ============================================= v2.15: тепловая карта готовности === */
+.seg--sm { padding:2px; }
+.seg--sm button { height:20px; padding:0 8px; flex:0 0 auto; }
+.heat-legend { display:inline-flex; align-items:center; gap:2px; }
+.heat-legend i { width:12px; height:12px; border-radius:2px; background:color-mix(in srgb, var(--ec-green) calc(var(--h) * 70%), var(--ec-fg-6)); }
+.heat-legend .muted { margin-left:6px; }
+.table.heat th, .table.heat td { padding:0 6px; }
+.table.heat td { height:32px; }
+.table.heat th.is-cur, .table.heat td.is-cur { background:var(--ec-fg-4); }
+.table.heat tr:hover td { background:var(--ec-fg-4); }
+.table.heat tr:hover td.is-cur { background:var(--ec-fg-6); }
+.heat__group td { height:28px; border-bottom:1px solid var(--ec-fg-12); padding-top:6px; }
+.heat__group:hover td { background:transparent !important; }
+.heat__group b { font-weight:600; color:var(--ec-fg-72); }
+.heat__cell { display:inline-flex; align-items:baseline; justify-content:flex-end; gap:4px; min-width:76px; height:24px; padding:0 8px; border-radius:var(--ec-radius);
+  background:color-mix(in srgb, var(--ec-green) calc(var(--h) * 70%), var(--ec-fg-6)); color:var(--ec-fg-96); font-variant-numeric:tabular-nums; transition:filter .12s; }
+.heat__cell:hover { filter:brightness(1.15); outline:1px solid var(--ec-fg-24); }
+.heat__cell b { font-weight:600; }
+.heat__cell small { font-size:10px; color:var(--ec-fg-64); }
+.heat__cell.is-done { color:var(--ec-ink); }
+.heat__cell.is-done small { display:none; }
+:root[data-theme="light"] .heat__cell { color:var(--ec-fg-96); }
+:root[data-theme="light"] .heat__cell.is-done { color:#ffffff; }
+.table.heat th:first-child, .table.heat td:first-child { width:34%; }
+.table.heat th.num:nth-child(2), .table.heat td.num:nth-child(2) { width:64px; }
