@@ -784,6 +784,13 @@ dialog::backdrop { background:var(--ec-bg-80); }
 /* v2.22.2: итоги групп тоже гаснут при фильтре по ступени */
 .heat__group .heat__cell--sum.is-dim, .heat__group.is-open .heat__cell--sum.is-dim { opacity:.18; }
 
+/* v2.23: у невыбранных приложений заголовок и процент остаются активными; серые только полоса и сводка */
+.arow { color:var(--ec-fg-96); }
+.arow .arow__name { color:var(--ec-fg-96); }
+.arow .pct { color:var(--ec-fg-80); }
+.arow:not(.is-selected):not(:hover) .arow__meta .todo { color:var(--ec-fg-56); }
+.arow.is-selected .arow__name, .arow.is-selected .pct { color:var(--ec-fg-100); }
+
 </style>
 </head>
 <body>
